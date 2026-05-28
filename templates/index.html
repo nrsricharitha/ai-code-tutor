@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% set title = "AI Code Tutor - Learn Programming the Smart Way" %}
+
+{% block content %}
+<main class="landing-page">
+    <section class="hero">
+        <div class="hero-copy">
+            <h1>AI Code Tutor</h1>
+            <p class="tagline">Learn Programming the Smart Way with AI</p>
+            <div class="hero-actions">
+                <a class="primary-button" href="{{ url_for('signup') }}">Get Started</a>
+            </div>
+            <div class="hero-account-links">
+                <a class="account-link-card" href="{{ url_for('login') }}">
+                    <span>Already have an account?</span>
+                    <strong>Login</strong>
+                </a>
+                <a class="account-link-card" href="{{ url_for('signup') }}">
+                    <span>New user?</span>
+                    <strong>Sign Up</strong>
+                </a>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
