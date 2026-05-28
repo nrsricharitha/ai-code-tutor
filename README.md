@@ -33,44 +33,7 @@ AI Code Tutor/
 └── static/
     ├── style.css
     └── script.js
-```
 
-## Installation
-
-1. Create a virtual environment:
-
-```bash
-python -m venv venv
-```
-
-2. Activate the virtual environment:
-
-```bash
-venv\Scripts\activate
-```
-
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Run Locally
-
-```bash
-python app.py
-```
-
-Open this URL in your browser:
-
-```text
-http://127.0.0.1:5000
-```
-
-## Example Screenshots Description
-
-- Welcome screen: Gradient EdTech hero page with animated glass cards and a Get Started button.
-- Auth screens: Clean centered glass forms for sign up and login.
 - Setup screen: Skill level and language preference cards.
 - Dashboard: Sidebar navigation, large code input area, action buttons, theme toggle, and explanation cards.
 
