@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set title = "AI Code Tutor - Learn Programming the Smart Way" %}
+
+{% block content %}
+<main class="landing-page">
+    <nav class="top-nav glass-panel">
+        <a class="brand" href="{{ url_for('index') }}">AI Code Tutor</a>
+        <div class="nav-actions">
+            {% if user %}
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a class="ghost-button" href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a>
+                <a class="ghost-button" href="{{ url_for('signup') }}">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-copy">
+            <p class="eyebrow">Beginner Friendly Code Explanations</p>
+            <h1>AI Code Tutor</h1>
+            <p class="tagline">Learn Programming the Smart Way with AI</p>
+            <div class="hero-actions">
+                <a class="primary-button" href="{{ url_for('signup') }}">Get Started</a>
+                <a class="secondary-button" href="{{ url_for('login') }}">I already have an account</a>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
