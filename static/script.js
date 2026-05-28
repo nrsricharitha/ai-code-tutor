@@ -36,10 +36,18 @@ for (let i = 0; i < marks.length; i++) {
     }
 ];
 
-let lastExplanationText = "";
+let lastSpeechChunks = [];
 let recognition = null;
 
-// Safely escape code before placing it into generated HTML.
+const speechLanguageCodes = {
+    English: "en-US",
+    Telugu: "te-IN",
+    Hindi: "hi-IN",
+    Marathi: "mr-IN",
+    Kannada: "kn-IN",
+    Tamil: "ta-IN"
+};
+
 function escapeHtml(value) {
     return value
         .replaceAll("&", "&amp;")
@@ -47,25 +55,52 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;");
 }
 
-// Render the explanation response returned by Flask.
+function normalizeSpokenCode(transcript) {
+    return transcript
+        .replace(/\bnew line\b/gi, "\n")
+        .replace(/\btab\b/gi, "    ")
+        .replace(/\bopen parenthesis\b/gi, "(")
+        .replace(/\bclose parenthesis\b/gi, ")")
+        .replace(/\bopen bracket\b/gi, "[")
+        .replace(/\bclose bracket\b/gi, "]")
+        .replace(/\bopen brace\b/gi, "{")
+        .replace(/\bclose brace\b/gi, "}")
+        .replace(/\bcolon\b/gi, ":")
+        .replace(/\bsemicolon\b/gi, ";")
+        .replace(/\bcomma\b/gi, ",")
+        .replace(/\bdot\b/gi, ".")
+        .replace(/\bequals\b/gi, "=")
+        .replace(/\bplus\b/gi, "+")
+        .replace(/\bminus\b/gi, "-")
+        .replace(/\btimes\b/gi, "*")
+        .replace(/\bdivide\b/gi, "/")
+        .replace(/\bdouble quote\b/gi, "\"")
+        .replace(/\bsingle quote\b/gi, "'")
+        .trim();
+}
+
 function renderExplanation(data) {
     const output = document.querySelector("#outputContent");
     const badge = document.querySelector("#detectedLanguage");
     const languages = data.selected_languages || ["English"];
-    const readableParts = [];
+    const speechChunks = [];
 
     badge.textContent = data.language;
 
     const lines = data.lines.map((line) => {
         const explanations = languages.map((language) => {
-            readableParts.push(`Line ${line.number}. ${language}. ${line.explanations[language]}`);
-            return `<p><strong>${language}:</strong> ${line.explanations[language]}</p>`;
+            const text = line.explanations[language] || "";
+            speechChunks.push({ language, text: `Line ${line.number}. ${text}` });
+            return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
         }).join("");
 
         return `
             <article class="line-card">
-                <div class="line-code"><span>Line ${line.number}</span><code>${escapeHtml(line.code || "blank line")}</code></div>
-                <div>${explanations}</div>
+                <div class="line-code">
+                    <span>Line ${line.number}</span>
+                    <code>${escapeHtml(line.code || "blank line")}</code>
+                </div>
+                <div class="line-explanations">${explanations}</div>
             </article>
         `;
     }).join("");
@@ -79,17 +114,21 @@ function renderExplanation(data) {
         `).join("")
         : "<li>No common beginner mistakes detected.</li>";
 
-    output.className = "explanation-content";
     const summaries = languages.map((language) => {
-        readableParts.push(`${language} summary. ${data.summaries[language]}`);
-        return `<p><strong>${language}:</strong> ${data.summaries[language]}</p>`;
-    }).join("");
-    const analogies = languages.map((language) => {
-        readableParts.push(`${language} analogy. ${data.analogies[language]}`);
-        return `<p><strong>${language}:</strong> ${data.analogies[language]}</p>`;
+        const text = data.summaries[language] || "";
+        speechChunks.push({ language, text });
+        return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
     }).join("");
 
-    lastExplanationText = readableParts.join(" ");
+    const analogies = languages.map((language) => {
+        const text = data.analogies[language] || "";
+        speechChunks.push({ language, text });
+        return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
+    }).join("");
+
+    lastSpeechChunks = speechChunks.filter((chunk) => chunk.text.trim());
+
+    output.className = "explanation-content";
     output.innerHTML = `
         <div class="summary-card">
             <p class="mode-note">${data.mode_note}</p>
@@ -106,7 +145,6 @@ function renderExplanation(data) {
     `;
 }
 
-// Send code to the Flask backend and show the AI-like explanation.
 async function explainCode() {
     const codeInput = document.querySelector("#codeInput");
     const preference = document.querySelector("#languagePreference");
@@ -114,12 +152,11 @@ async function explainCode() {
     const output = document.querySelector("#outputContent");
     const explainBtn = document.querySelector("#explainBtn");
 
-    output.className = "empty-state";
+    output.className = "empty-state loading-state";
     output.innerHTML = `<span class="loader"></span><strong>Thinking through your code...</strong>`;
-    output.classList.add("is-loading");
+    explainBtn?.classList.add("glow-pulse");
     if (explainBtn) {
         explainBtn.disabled = true;
-        explainBtn.classList.add("glow-pulse");
     }
 
     try {
@@ -134,23 +171,22 @@ async function explainCode() {
         });
 
         const data = await response.json();
-
         if (!response.ok) {
+            output.className = "empty-state";
             output.textContent = data.error || "Something went wrong.";
-            return;
+            return false;
         }
 
         renderExplanation(data);
+        return true;
     } finally {
-        output.classList.remove("is-loading");
+        explainBtn?.classList.remove("glow-pulse");
         if (explainBtn) {
             explainBtn.disabled = false;
-            explainBtn.classList.remove("glow-pulse");
         }
     }
 }
 
-// Use the browser microphone to turn spoken code into text.
 function setupVoiceInput() {
     const speakBtn = document.querySelector("#speakCodeBtn");
     const codeInput = document.querySelector("#codeInput");
@@ -176,14 +212,21 @@ function setupVoiceInput() {
         voiceStatus.classList.add("listening");
         speakBtn.classList.add("recording");
         voiceStatus.querySelector("strong").textContent = "Listening... speak your code now";
-        recognition.start();
+        try {
+            recognition.start();
+        } catch {
+            voiceStatus.querySelector("strong").textContent = "Microphone is already listening.";
+        }
     });
 
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        codeInput.value = codeInput.value ? `${codeInput.value}\n${transcript}` : transcript;
+    recognition.onresult = async (event) => {
+        const spokenCode = normalizeSpokenCode(event.results[0][0].transcript);
+        codeInput.value = codeInput.value ? `${codeInput.value}\n${spokenCode}` : spokenCode;
         voiceStatus.querySelector("strong").textContent = "Voice captured. Explaining now...";
-        explainCode().then(() => readExplanationAloud());
+        const explained = await explainCode();
+        if (explained) {
+            readExplanationAloud();
+        }
     };
 
     recognition.onerror = () => {
@@ -196,10 +239,8 @@ function setupVoiceInput() {
     };
 }
 
-// Read the latest explanation aloud with the browser speaker.
 function readExplanationAloud() {
     const voiceStatus = document.querySelector("#voiceStatus");
-
     if (!voiceStatus) {
         return;
     }
@@ -209,16 +250,19 @@ function readExplanationAloud() {
         return;
     }
 
-    if (!lastExplanationText) {
+    if (!lastSpeechChunks.length) {
         voiceStatus.querySelector("strong").textContent = "Generate an explanation before reading it aloud.";
         return;
     }
 
     window.speechSynthesis.cancel();
-    const speech = new SpeechSynthesisUtterance(lastExplanationText);
-    speech.rate = 0.92;
-    speech.pitch = 1;
-    window.speechSynthesis.speak(speech);
+    lastSpeechChunks.forEach((chunk) => {
+        const speech = new SpeechSynthesisUtterance(chunk.text);
+        speech.lang = speechLanguageCodes[chunk.language] || "en-US";
+        speech.rate = 0.9;
+        speech.pitch = 1;
+        window.speechSynthesis.speak(speech);
+    });
     voiceStatus.querySelector("strong").textContent = "Reading explanation aloud";
 }
 
@@ -229,7 +273,6 @@ function setupSpeechOutput() {
     }
 }
 
-// Render example buttons and wire them to the textarea.
 function setupExamples() {
     const grid = document.querySelector("#exampleGrid");
     const codeInput = document.querySelector("#codeInput");
@@ -255,15 +298,12 @@ function setupExamples() {
         codeInput.focus();
     });
 
-    if (loadExampleBtn) {
-        loadExampleBtn.addEventListener("click", () => {
-            codeInput.value = examples[0].code;
-            codeInput.focus();
-        });
-    }
+    loadExampleBtn?.addEventListener("click", () => {
+        codeInput.value = examples[0].code;
+        codeInput.focus();
+    });
 }
 
-// Store the user's theme choice in localStorage.
 function setupThemeToggle() {
     const button = document.querySelector("#themeToggle");
     const savedTheme = localStorage.getItem("theme") || "dark";
@@ -280,7 +320,6 @@ function setupThemeToggle() {
     }
 }
 
-// Connect dashboard buttons after the page is ready.
 document.addEventListener("DOMContentLoaded", () => {
     setupThemeToggle();
     setupExamples();
@@ -293,17 +332,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const output = document.querySelector("#outputContent");
     const badge = document.querySelector("#detectedLanguage");
 
-    if (explainBtn) {
-        explainBtn.addEventListener("click", explainCode);
-    }
+    explainBtn?.addEventListener("click", explainCode);
 
-    if (clearBtn) {
-        clearBtn.addEventListener("click", () => {
-            codeInput.value = "";
-            output.className = "empty-state";
-            output.textContent = "Enter code and click Explain Code.";
-            badge.textContent = "Waiting";
-            lastExplanationText = "";
-        });
-    }
+    clearBtn?.addEventListener("click", () => {
+        codeInput.value = "";
+        output.className = "empty-state";
+        output.textContent = "Enter code and click Explain Code.";
+        badge.textContent = "Waiting";
+        lastSpeechChunks = [];
+        window.speechSynthesis?.cancel();
+    });
 });
