@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set title = "Dashboard - AI Code Tutor" %}
+
+{% block content %}
+<main class="dashboard-page">
+    <aside class="sidebar glass-panel">
+        <a class="brand" href="{{ url_for('dashboard') }}">AI Code Tutor</a>
+        <div class="profile-pill">
+            <span>{{ user["name"][0]|upper }}</span>
+            <div>
+                <strong>{{ user["name"] }}</strong>
+                <small>{{ user["skill_level"] }} • {{ user["language_preference"] }}</small>
+            </div>
+        </div>
+        <nav class="side-links">
+            <a href="#editor">Code Tutor</a>
+            <a href="#output">Explanations</a>
+            <a href="#examples">Examples</a>
+        </nav>
+        <a class="logout-link" href="{{ url_for('logout') }}">Logout</a>
+    </aside>
+
+    <section class="dashboard-main">
+        <header class="dashboard-header glass-panel">
+            <div>
+                <p class="eyebrow">Smart practice workspace</p>
+                <h1>Explain code in simple words</h1>
+            </div>
+            <button class="theme-toggle" id="themeToggle" type="button">Light</button>
+        </header>
+
+        <section class="workspace-grid">
+            <div class="editor-card glass-panel" id="editor">
+                <div class="card-header">
+                    <div>
+                        <h2>Code Input</h2>
+                        <p>Paste C, C++, Python, or JavaScript code.</p>
+                    </div>
+                    <div class="language-picker">
+                        <label class="select-label" for="languagePreference">Select Explanation Language</label>
+                        <select id="languagePreference" aria-label="Select Explanation Language">
+                            <option value="English" {% if user["language_preference"] == "English" %}selected{% endif %}>English</option>
+                            <option value="Telugu" {% if user["language_preference"] == "Telugu" %}selected{% endif %}>Telugu</option>
+                            <option value="Hindi" {% if user["language_preference"] == "Hindi" %}selected{% endif %}>Hindi</option>
+                            <option value="Marathi" {% if user["language_preference"] == "Marathi" %}selected{% endif %}>Marathi</option>
+                            <option value="Kannada" {% if user["language_preference"] == "Kannada" %}selected{% endif %}>Kannada</option>
+                            <option value="Tamil" {% if user["language_preference"] == "Tamil" %}selected{% endif %}>Tamil</option>
+                            <option value="Multiple Languages" {% if user["language_preference"] in ["Multiple Languages", "Both", ""] %}selected{% endif %}>Multiple Languages</option>
+                        </select>
+                    </div>
+                </div>
+                <textarea id="codeInput" spellcheck="false" placeholder="Paste your code here..."></textarea>
+                <div class="button-row">
+                    <button class="primary-button" id="explainBtn" type="button">Explain Code</button>
+                    <button class="secondary-button" id="clearBtn" type="button">Clear</button>
+                    <button class="secondary-button" id="loadExampleBtn" type="button">Load Example</button>
+                </div>
+            </div>
+
+            <div class="output-card glass-panel" id="output">
+                <div class="card-header">
+                    <div>
+                        <h2>AI Explanation</h2>
+                        <p>Line-by-line help appears here.</p>
+                    </div>
+                    <span class="language-badge" id="detectedLanguage">Waiting</span>
+                </div>
+                <div id="outputContent" class="empty-state">
+                    Enter code and click Explain Code.
+                </div>
+            </div>
+        </section>
+
+        <section class="examples-section glass-panel" id="examples">
+            <div class="card-header">
+                <div>
+                    <h2>Example Programs</h2>
+                    <p>Practice with common beginner programs.</p>
+                </div>
+            </div>
+            <div class="example-grid" id="exampleGrid"></div>
+        </section>
+    </section>
+</main>
+{% endblock %}
