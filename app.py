@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
+from functools import wraps
 import re
 import sqlite3
 from pathlib import Path
@@ -139,12 +140,12 @@ def current_user():
 
 def login_required(view_function):
     """Simple decorator to protect pages that need a logged-in user."""
+    @wraps(view_function)
     def wrapped_view(*args, **kwargs):
         if not session.get("user_id"):
             return redirect(url_for("login"))
         return view_function(*args, **kwargs)
 
-    wrapped_view.__name__ = view_function.__name__
     return wrapped_view
 
 
@@ -152,9 +153,12 @@ def detect_language(code):
     """Guess the programming language using beginner-friendly pattern checks."""
     lowered = code.lower()
 
-    if "#include" in code or "using namespace std" in lowered or "cout <<" in code or "cin >>" in code:
+    # C++ must be checked before C because C++ also uses #include
+    if "using namespace std" in lowered or "cout <<" in code or "cin >>" in code:
         return "C++"
-    if "#include" in code or "printf(" in code or "scanf(" in code:
+    if "#include" in code and re.search(r"\b(printf|scanf|int main)\b", code):
+        return "C"
+    if "#include" in code:
         return "C"
     if "function " in code or "console.log" in code or "let " in code or "const " in code:
         return "JavaScript"
@@ -295,7 +299,7 @@ def build_explanation(code, preference, skill_mode="Beginner"):
 
     english_summary = "This program " + ", ".join(summary_parts) + "." if summary_parts else SUMMARY_TRANSLATIONS["English"]
     summaries = {language_name: SUMMARY_TRANSLATIONS[language_name] for language_name in SUPPORTED_LANGUAGES}
-    summaries["English"] = english_summary if "English" in languages else summaries.get("English", english_summary)
+    summaries["English"] = english_summary  # Always use the code-specific generated English summary
     analogies = {language_name: ANALOGY_TRANSLATIONS[language_name] for language_name in SUPPORTED_LANGUAGES}
 
     mode_note = "Beginner mode uses simple words and everyday comparisons."
