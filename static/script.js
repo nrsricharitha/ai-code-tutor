@@ -49,10 +49,8 @@ const speechLanguageCodes = {
     Tamil: "ta-IN"
 };
 
-const ALL_LANGUAGES = ["English", "Telugu", "Hindi", "Marathi", "Kannada", "Tamil"];
-
 function languagesForPreference(preference, data) {
-    const allLanguages = data?.supported_languages || ALL_LANGUAGES;
+    const allLanguages = data?.supported_languages || ["English", "Telugu", "Hindi", "Marathi", "Kannada", "Tamil"];
     if (preference === "Multiple Languages" || preference === "Both") {
         return allLanguages;
     }
@@ -90,49 +88,19 @@ function normalizeSpokenCode(transcript) {
         .trim();
 }
 
-// Returns the best available voice language code.
-// If the desired language voice is not installed on the user's device,
-// falls back to English so audio is never silently skipped.
-function getAvailableVoiceLang(desiredLang) {
-    const voices = window.speechSynthesis.getVoices();
-    const exact = voices.find(v => v.lang === desiredLang);
-    if (exact) return desiredLang;
-    const prefix = desiredLang.split("-")[0];
-    const partial = voices.find(v => v.lang.startsWith(prefix));
-    if (partial) return partial.lang;
-    return "en-US";
-}
-
-// Build speech chunks from explanation data for the given language(s).
-function buildSpeechChunks(data, languages) {
-    const chunks = [];
-    const summaryLang = languages[0];
-    const summaryText = data.summaries[summaryLang] || "";
-    if (summaryText.trim()) {
-        chunks.push({ language: summaryLang, text: summaryText });
-    }
-    data.lines.forEach((line) => {
-        languages.forEach((language) => {
-            const text = line.explanations[language] || "";
-            if (text.trim()) {
-                chunks.push({ language, text });
-            }
-        });
-    });
-    return chunks;
-}
-
 function renderExplanation(data) {
     const output = document.querySelector("#outputContent");
     const badge = document.querySelector("#detectedLanguage");
     const preference = document.querySelector("#languagePreference")?.value || data.preference;
     const languages = languagesForPreference(preference, data);
+    const speechChunks = [];
 
     badge.textContent = data.language;
 
     const lines = data.lines.map((line) => {
         const explanations = languages.map((language) => {
             const text = line.explanations[language] || "";
+            speechChunks.push({ language, text: `Line ${line.number}. ${text}` });
             return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
         }).join("");
 
@@ -158,16 +126,17 @@ function renderExplanation(data) {
 
     const summaries = languages.map((language) => {
         const text = data.summaries[language] || "";
+        speechChunks.push({ language, text });
         return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
     }).join("");
 
     const analogies = languages.map((language) => {
         const text = data.analogies[language] || "";
+        speechChunks.push({ language, text });
         return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
     }).join("");
 
-    // Rebuild speech chunks using current language selection
-    lastSpeechChunks = buildSpeechChunks(data, languages);
+    lastSpeechChunks = speechChunks.filter((chunk) => chunk.text.trim());
     lastExplanationData = data;
 
     output.className = "explanation-content";
@@ -285,76 +254,29 @@ function setupVoiceInput() {
 
 function readExplanationAloud() {
     const voiceStatus = document.querySelector("#voiceStatus");
-    if (!voiceStatus) return;
-
-    if (!window.speechSynthesis) {
-        voiceStatus.querySelector("strong").textContent = "Speech not supported in this browser. Try Chrome.";
+    if (!voiceStatus) {
         return;
     }
 
-    if (!lastExplanationData) {
+    if (!window.speechSynthesis) {
+        voiceStatus.querySelector("strong").textContent = "Speech reading is not supported in this browser.";
+        return;
+    }
+
+    if (!lastSpeechChunks.length) {
         voiceStatus.querySelector("strong").textContent = "Generate an explanation before reading it aloud.";
         return;
     }
 
-    const preference = document.querySelector("#languagePreference")?.value || "English";
-    const languages = languagesForPreference(preference, lastExplanationData);
-    const chunks = buildSpeechChunks(lastExplanationData, languages);
-
-    if (!chunks.length) {
-        voiceStatus.querySelector("strong").textContent = "Nothing to read aloud yet.";
-        return;
-    }
-
     window.speechSynthesis.cancel();
-
-    function startSpeaking() {
-        let index = 0;
-
-        function speakNext() {
-            if (index >= chunks.length) {
-                voiceStatus.querySelector("strong").textContent = "Done reading.";
-                return;
-            }
-
-            const chunk = chunks[index++];
-            const desiredLang = speechLanguageCodes[chunk.language] || "en-US";
-            const actualLang = getAvailableVoiceLang(desiredLang);
-
-            const utterance = new SpeechSynthesisUtterance(chunk.text);
-            utterance.lang = actualLang;
-            utterance.rate = 0.85;
-            utterance.pitch = 1;
-            utterance.volume = 1;
-
-            utterance.onstart = () => {
-                voiceStatus.querySelector("strong").textContent =
-                    `Speaking: ${chunk.language}${actualLang !== desiredLang ? " (English voice)" : ""}`;
-            };
-            utterance.onend = speakNext;
-            utterance.onerror = (e) => {
-                console.warn("Speech error:", e);
-                speakNext();
-            };
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        speakNext();
-    }
-
-    // Chrome loads voices asynchronously — wait for them if not ready yet
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-        setTimeout(startSpeaking, 150);
-    } else {
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.onvoiceschanged = null;
-            setTimeout(startSpeaking, 150);
-        };
-    }
-
-    voiceStatus.querySelector("strong").textContent = `Preparing to read in ${preference}...`;
+    lastSpeechChunks.forEach((chunk) => {
+        const speech = new SpeechSynthesisUtterance(chunk.text);
+        speech.lang = speechLanguageCodes[chunk.language] || "en-US";
+        speech.rate = 0.9;
+        speech.pitch = 1;
+        window.speechSynthesis.speak(speech);
+    });
+    voiceStatus.querySelector("strong").textContent = "Reading explanation aloud";
 }
 
 function setupSpeechOutput() {
