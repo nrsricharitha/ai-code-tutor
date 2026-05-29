@@ -49,7 +49,6 @@ const speechLanguageCodes = {
     Tamil: "ta-IN"
 };
 
-// English must always be included since the backend always returns it
 const ALL_LANGUAGES = ["English", "Telugu", "Hindi", "Marathi", "Kannada", "Tamil"];
 
 function languagesForPreference(preference, data) {
@@ -91,18 +90,27 @@ function normalizeSpokenCode(transcript) {
         .trim();
 }
 
-function buildSpeechChunks(data, languages) {
-    // Build speech chunks from explanation data for the given language(s).
-    // Speech text does NOT include "Line N." prefixes — the explanation text
-    // is already a complete sentence describing what that line does.
-    const chunks = [];
+// Returns the best available voice language code.
+// If the desired language voice is not installed on the user's device,
+// falls back to English so audio is never silently skipped.
+function getAvailableVoiceLang(desiredLang) {
+    const voices = window.speechSynthesis.getVoices();
+    const exact = voices.find(v => v.lang === desiredLang);
+    if (exact) return desiredLang;
+    const prefix = desiredLang.split("-")[0];
+    const partial = voices.find(v => v.lang.startsWith(prefix));
+    if (partial) return partial.lang;
+    return "en-US";
+}
 
-    const summaryLang = languages[0]; // Read summary in the primary chosen language
+// Build speech chunks from explanation data for the given language(s).
+function buildSpeechChunks(data, languages) {
+    const chunks = [];
+    const summaryLang = languages[0];
     const summaryText = data.summaries[summaryLang] || "";
     if (summaryText.trim()) {
         chunks.push({ language: summaryLang, text: summaryText });
     }
-
     data.lines.forEach((line) => {
         languages.forEach((language) => {
             const text = line.explanations[language] || "";
@@ -111,7 +119,6 @@ function buildSpeechChunks(data, languages) {
             }
         });
     });
-
     return chunks;
 }
 
@@ -159,7 +166,7 @@ function renderExplanation(data) {
         return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
     }).join("");
 
-    // Always rebuild speech chunks using current language selection
+    // Rebuild speech chunks using current language selection
     lastSpeechChunks = buildSpeechChunks(data, languages);
     lastExplanationData = data;
 
@@ -281,7 +288,7 @@ function readExplanationAloud() {
     if (!voiceStatus) return;
 
     if (!window.speechSynthesis) {
-        voiceStatus.querySelector("strong").textContent = "Speech reading is not supported in this browser.";
+        voiceStatus.querySelector("strong").textContent = "Speech not supported in this browser. Try Chrome.";
         return;
     }
 
@@ -290,8 +297,6 @@ function readExplanationAloud() {
         return;
     }
 
-    // Always rebuild from the currently selected language so switching then
-    // clicking Read works correctly without needing to re-explain.
     const preference = document.querySelector("#languagePreference")?.value || "English";
     const languages = languagesForPreference(preference, lastExplanationData);
     const chunks = buildSpeechChunks(lastExplanationData, languages);
@@ -301,32 +306,55 @@ function readExplanationAloud() {
         return;
     }
 
-    // Cancel any ongoing speech first, then wait a tick before starting.
-    // Chrome drops utterances queued immediately after cancel(), so the
-    // delay is necessary — and we chain utterances via onend instead of
-    // bulk-queuing them, which also fails silently in Chrome.
     window.speechSynthesis.cancel();
 
-    let index = 0;
+    function startSpeaking() {
+        let index = 0;
 
-    function speakNext() {
-        if (index >= chunks.length) {
-            voiceStatus.querySelector("strong").textContent = "Voice tools ready";
-            return;
+        function speakNext() {
+            if (index >= chunks.length) {
+                voiceStatus.querySelector("strong").textContent = "Done reading.";
+                return;
+            }
+
+            const chunk = chunks[index++];
+            const desiredLang = speechLanguageCodes[chunk.language] || "en-US";
+            const actualLang = getAvailableVoiceLang(desiredLang);
+
+            const utterance = new SpeechSynthesisUtterance(chunk.text);
+            utterance.lang = actualLang;
+            utterance.rate = 0.85;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+
+            utterance.onstart = () => {
+                voiceStatus.querySelector("strong").textContent =
+                    `Speaking: ${chunk.language}${actualLang !== desiredLang ? " (English voice)" : ""}`;
+            };
+            utterance.onend = speakNext;
+            utterance.onerror = (e) => {
+                console.warn("Speech error:", e);
+                speakNext();
+            };
+
+            window.speechSynthesis.speak(utterance);
         }
-        const chunk = chunks[index++];
-        const utterance = new SpeechSynthesisUtterance(chunk.text);
-        utterance.lang = speechLanguageCodes[chunk.language] || "en-US";
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        utterance.onend = speakNext;
-        utterance.onerror = speakNext; // skip broken chunks and continue
-        window.speechSynthesis.speak(utterance);
+
+        speakNext();
     }
 
-    // Small delay after cancel() so the browser speech engine is ready
-    setTimeout(speakNext, 150);
-    voiceStatus.querySelector("strong").textContent = `Reading explanation aloud in ${preference}`;
+    // Chrome loads voices asynchronously — wait for them if not ready yet
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+        setTimeout(startSpeaking, 150);
+    } else {
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.onvoiceschanged = null;
+            setTimeout(startSpeaking, 150);
+        };
+    }
+
+    voiceStatus.querySelector("strong").textContent = `Preparing to read in ${preference}...`;
 }
 
 function setupSpeechOutput() {
