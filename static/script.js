@@ -301,14 +301,31 @@ function readExplanationAloud() {
         return;
     }
 
+    // Cancel any ongoing speech first, then wait a tick before starting.
+    // Chrome drops utterances queued immediately after cancel(), so the
+    // delay is necessary — and we chain utterances via onend instead of
+    // bulk-queuing them, which also fails silently in Chrome.
     window.speechSynthesis.cancel();
-    chunks.forEach((chunk) => {
-        const speech = new SpeechSynthesisUtterance(chunk.text);
-        speech.lang = speechLanguageCodes[chunk.language] || "en-US";
-        speech.rate = 0.9;
-        speech.pitch = 1;
-        window.speechSynthesis.speak(speech);
-    });
+
+    let index = 0;
+
+    function speakNext() {
+        if (index >= chunks.length) {
+            voiceStatus.querySelector("strong").textContent = "Voice tools ready";
+            return;
+        }
+        const chunk = chunks[index++];
+        const utterance = new SpeechSynthesisUtterance(chunk.text);
+        utterance.lang = speechLanguageCodes[chunk.language] || "en-US";
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.onend = speakNext;
+        utterance.onerror = speakNext; // skip broken chunks and continue
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Small delay after cancel() so the browser speech engine is ready
+    setTimeout(speakNext, 150);
     voiceStatus.querySelector("strong").textContent = `Reading explanation aloud in ${preference}`;
 }
 
