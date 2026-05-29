@@ -100,7 +100,7 @@ function renderExplanation(data) {
     const lines = data.lines.map((line) => {
         const explanations = languages.map((language) => {
             const text = line.explanations[language] || "";
-            speechChunks.push({ language, text: `Line ${line.number}. ${text}` });
+            speechChunks.push({ language, text: text });  // ← removed "Line N." prefix
             return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
         }).join("");
 
@@ -269,13 +269,25 @@ function readExplanationAloud() {
     }
 
     window.speechSynthesis.cancel();
-    lastSpeechChunks.forEach((chunk) => {
-        const speech = new SpeechSynthesisUtterance(chunk.text);
-        speech.lang = speechLanguageCodes[chunk.language] || "en-US";
-        speech.rate = 0.9;
-        speech.pitch = 1;
-        window.speechSynthesis.speak(speech);
-    });
+
+    let index = 0;
+
+    function speakNext() {
+        if (index >= lastSpeechChunks.length) {
+            voiceStatus.querySelector("strong").textContent = "Done reading.";
+            return;
+        }
+        const chunk = lastSpeechChunks[index++];
+        const utterance = new SpeechSynthesisUtterance(chunk.text);
+        utterance.lang = speechLanguageCodes[chunk.language] || "en-US";
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.onend = speakNext;
+        utterance.onerror = speakNext;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    setTimeout(speakNext, 150);
     voiceStatus.querySelector("strong").textContent = "Reading explanation aloud";
 }
 
