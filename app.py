@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
+import os
 import re
 import sqlite3
 from pathlib import Path
@@ -8,10 +9,20 @@ from pathlib import Path
 
 # Basic Flask setup. The secret key protects login sessions in the browser.
 app = Flask(__name__)
-app.secret_key = "replace-this-secret-key-for-production"
+# Read secret key from environment variable (set this in Render dashboard).
+# Falls back to a dev key locally — never use the fallback in production.
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-secret-key-change-me")
 
 BASE_DIR = Path(__file__).resolve().parent
-DATABASE = BASE_DIR / "ai_code_tutor.db"
+
+# On Render the project folder is read-only after deploy, but /tmp is always
+# writable. We store the DB there so it survives app restarts within a session.
+# NOTE: /tmp is cleared on every NEW deploy — users will need to re-register
+# after a redeploy. For permanent storage, migrate to PostgreSQL later.
+if os.environ.get("RENDER"):
+    DATABASE = Path("/tmp/ai_code_tutor.db")
+else:
+    DATABASE = BASE_DIR / "ai_code_tutor.db"
 
 SUPPORTED_LANGUAGES = ["English", "Telugu", "Hindi", "Marathi", "Kannada", "Tamil"]
 
