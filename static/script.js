@@ -49,8 +49,11 @@ const speechLanguageCodes = {
     Tamil: "ta-IN"
 };
 
+// English must always be included since the backend always returns it
+const ALL_LANGUAGES = ["English", "Telugu", "Hindi", "Marathi", "Kannada", "Tamil"];
+
 function languagesForPreference(preference, data) {
-    const allLanguages = data?.supported_languages || ["English", "Telugu", "Hindi", "Marathi", "Kannada", "Tamil"];
+    const allLanguages = data?.supported_languages || ALL_LANGUAGES;
     if (preference === "Multiple Languages" || preference === "Both") {
         return allLanguages;
     }
@@ -88,19 +91,41 @@ function normalizeSpokenCode(transcript) {
         .trim();
 }
 
+function buildSpeechChunks(data, languages) {
+    // Build speech chunks from explanation data for the given language(s).
+    // Speech text does NOT include "Line N." prefixes — the explanation text
+    // is already a complete sentence describing what that line does.
+    const chunks = [];
+
+    const summaryLang = languages[0]; // Read summary in the primary chosen language
+    const summaryText = data.summaries[summaryLang] || "";
+    if (summaryText.trim()) {
+        chunks.push({ language: summaryLang, text: summaryText });
+    }
+
+    data.lines.forEach((line) => {
+        languages.forEach((language) => {
+            const text = line.explanations[language] || "";
+            if (text.trim()) {
+                chunks.push({ language, text });
+            }
+        });
+    });
+
+    return chunks;
+}
+
 function renderExplanation(data) {
     const output = document.querySelector("#outputContent");
     const badge = document.querySelector("#detectedLanguage");
     const preference = document.querySelector("#languagePreference")?.value || data.preference;
     const languages = languagesForPreference(preference, data);
-    const speechChunks = [];
 
     badge.textContent = data.language;
 
     const lines = data.lines.map((line) => {
         const explanations = languages.map((language) => {
             const text = line.explanations[language] || "";
-            speechChunks.push({ language, text: `Line ${line.number}. ${text}` });
             return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
         }).join("");
 
@@ -126,17 +151,16 @@ function renderExplanation(data) {
 
     const summaries = languages.map((language) => {
         const text = data.summaries[language] || "";
-        speechChunks.push({ language, text });
         return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
     }).join("");
 
     const analogies = languages.map((language) => {
         const text = data.analogies[language] || "";
-        speechChunks.push({ language, text });
         return `<p><strong class="speech-label">${language}:</strong> <span class="speakable-text">${text}</span></p>`;
     }).join("");
 
-    lastSpeechChunks = speechChunks.filter((chunk) => chunk.text.trim());
+    // Always rebuild speech chunks using current language selection
+    lastSpeechChunks = buildSpeechChunks(data, languages);
     lastExplanationData = data;
 
     output.className = "explanation-content";
@@ -254,29 +278,38 @@ function setupVoiceInput() {
 
 function readExplanationAloud() {
     const voiceStatus = document.querySelector("#voiceStatus");
-    if (!voiceStatus) {
-        return;
-    }
+    if (!voiceStatus) return;
 
     if (!window.speechSynthesis) {
         voiceStatus.querySelector("strong").textContent = "Speech reading is not supported in this browser.";
         return;
     }
 
-    if (!lastSpeechChunks.length) {
+    if (!lastExplanationData) {
         voiceStatus.querySelector("strong").textContent = "Generate an explanation before reading it aloud.";
         return;
     }
 
+    // Always rebuild from the currently selected language so switching then
+    // clicking Read works correctly without needing to re-explain.
+    const preference = document.querySelector("#languagePreference")?.value || "English";
+    const languages = languagesForPreference(preference, lastExplanationData);
+    const chunks = buildSpeechChunks(lastExplanationData, languages);
+
+    if (!chunks.length) {
+        voiceStatus.querySelector("strong").textContent = "Nothing to read aloud yet.";
+        return;
+    }
+
     window.speechSynthesis.cancel();
-    lastSpeechChunks.forEach((chunk) => {
+    chunks.forEach((chunk) => {
         const speech = new SpeechSynthesisUtterance(chunk.text);
         speech.lang = speechLanguageCodes[chunk.language] || "en-US";
         speech.rate = 0.9;
         speech.pitch = 1;
         window.speechSynthesis.speak(speech);
     });
-    voiceStatus.querySelector("strong").textContent = "Reading explanation aloud";
+    voiceStatus.querySelector("strong").textContent = `Reading explanation aloud in ${preference}`;
 }
 
 function setupSpeechOutput() {
