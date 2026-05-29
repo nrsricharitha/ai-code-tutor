@@ -8,7 +8,7 @@
     --primary: #37d5a4;
     --accent: #ffca55;
     --danger: #ff6b6b;
-    --line: rgba(49, 19, 19, 0.17);
+    --line: rgba(255, 255, 255, 0.17);
     --shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
 }
 
@@ -494,19 +494,23 @@ textarea {
 }
 
 .dashboard-controls {
-    align-items: stretch;
-    gap: 1.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem;
 }
 
 .editor-title {
-    min-width: 220px;
+    flex: 0 0 auto;
+    min-width: 180px;
 }
 
 .control-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
     gap: 1rem;
-    width: min(100%, 560px);
+    flex: 1 1 300px;
+    min-width: 0;
 }
 
 .language-picker {
