@@ -46,7 +46,7 @@
                                 <option value="Marathi" {% if user["language_preference"] == "Marathi" %}selected{% endif %}>Marathi</option>
                                 <option value="Kannada" {% if user["language_preference"] == "Kannada" %}selected{% endif %}>Kannada</option>
                                 <option value="Tamil" {% if user["language_preference"] == "Tamil" %}selected{% endif %}>Tamil</option>
-                                <option value="Multiple Languages" {% if user["language_preference"] in ["Multiple Languages", "Both", ""] %}selected{% endif %}>Multiple Languages</option>
+                                <option value="Multiple Languages" {% if user["language_preference"] in ["Multiple Languages", "Both"] or user["language_preference"] == "" %}selected{% endif %}>Multiple Languages</option>
                             </select>
                         </div>
                         <div class="language-picker">
