@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set title = "Setup - AI Code Tutor" %}
+
+{% block content %}
+<main class="setup-page">
+    <form class="setup-card glass-panel" method="POST">
+        <a class="brand center-brand" href="{{ url_for('index') }}">AI Code Tutor</a>
+        <h1>Personalize your learning</h1>
+        <p>Hi {{ user["name"] }}, choose how you want explanations to appear.</p>
+
+        <h2>Skill level</h2>
+        <div class="choice-grid">
+            <label class="choice-card">
+                <input type="radio" name="skill_level" value="Beginner" checked>
+                <span>Beginner</span>
+            </label>
+            <label class="choice-card">
+                <input type="radio" name="skill_level" value="Intermediate">
+                <span>Intermediate</span>
+            </label>
+        </div>
+
+        <h2>Explanation language</h2>
+        <div class="choice-grid">
+            <label class="choice-card">
+                <input type="radio" name="language_preference" value="English">
+                <span>English</span>
+            </label>
+            <label class="choice-card">
+                <input type="radio" name="language_preference" value="Telugu">
+                <span>Telugu</span>
+            </label>
+            <label class="choice-card">
+                <input type="radio" name="language_preference" value="Hindi">
+                <span>Hindi</span>
+            </label>
+            <label class="choice-card">
+                <input type="radio" name="language_preference" value="Marathi">
+                <span>Marathi</span>
+            </label>
+            <label class="choice-card">
+                <input type="radio" name="language_preference" value="Kannada">
+                <span>Kannada</span>
+            </label>
+            <label class="choice-card">
+                <input type="radio" name="language_preference" value="Tamil">
+                <span>Tamil</span>
+            </label>
+            <label class="choice-card">
+                <input type="radio" name="language_preference" value="Multiple Languages" checked>
+                <span>Multiple Languages</span>
+            </label>
+        </div>
+
+        <button class="primary-button full-button" type="submit">Open Dashboard</button>
+    </form>
+</main>
+{% endblock %}
