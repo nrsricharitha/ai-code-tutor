@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+venv/
+.venv/
+ai_code_tutor.db
+.env
