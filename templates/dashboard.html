@@ -1,112 +1,138 @@
 {% extends "base.html" %}
-{% set title = "Dashboard - AI Code Tutor" %}
 
 {% block content %}
-<main class="dashboard-page">
-    <aside class="sidebar glass-panel">
-        <a class="brand" href="{{ url_for('dashboard') }}">AI Code Tutor</a>
-        <div class="profile-pill">
-            <span>{{ user["name"][0]|upper }}</span>
-            <div>
-                <strong>{{ user["name"] }}</strong>
-                <small>{{ user["skill_level"] }} • {{ user["language_preference"] }}</small>
-            </div>
+<div class="dashboard-layout">
+    <aside class="sidebar glass">
+        <div class="user-info">
+            <div class="avatar"><i class="fas fa-user-graduate"></i></div>
+            <h3>{{ current_user.username }}</h3>
+            <span class="badge">{{ current_user.skill_level }}</span>
         </div>
-        <nav class="side-links">
-            <a href="#editor">Code Tutor</a>
-            <a href="#output">Explanations</a>
-            <a href="#history">History</a>
-            <a href="#saved">Saved</a>
+        
+        <nav class="sidebar-nav">
+            <a href="#" class="active" id="nav-editor"><i class="fas fa-code"></i> Editor</a>
+            <a href="#" id="nav-history"><i class="fas fa-history"></i> History</a>
+            <a href="#" id="nav-favorites"><i class="fas fa-star"></i> Favorites</a>
+            <a href="#" id="nav-progress"><i class="fas fa-chart-bar"></i> Progress</a>
+            <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
-        <a class="logout-link" href="{{ url_for('logout') }}">Logout</a>
+
+        <div class="theme-toggle">
+            <i class="fas fa-sun"></i>
+            <label class="switch">
+                <input type="checkbox" id="dark-mode-toggle">
+                <span class="slider round"></span>
+            </label>
+            <i class="fas fa-moon"></i>
+        </div>
     </aside>
 
-    <section class="dashboard-main">
-        <header class="dashboard-header glass-panel">
-            <div>
-                <p class="eyebrow">Smart practice workspace</p>
-                <h1>Explain code in simple words</h1>
+    <main class="main-content">
+        <section id="editor-section">
+            <div class="editor-header">
+                <div class="controls">
+                    <select id="prog-language">
+                        <option value="python">Python</option>
+                        <option value="c">C</option>
+                        <option value="cpp">C++</option>
+                        <option value="java">Java</option>
+                        <option value="javascript">JavaScript</option>
+                    </select>
+                    <select id="explanation-language">
+                        <option value="English" {% if current_user.preferred_language == 'English' %}selected{% endif %}>English</option>
+                        <option value="Telugu" {% if current_user.preferred_language == 'Telugu' %}selected{% endif %}>Telugu</option>
+                        <option value="Hindi" {% if current_user.preferred_language == 'Hindi' %}selected{% endif %}>Hindi</option>
+                        <option value="Marathi" {% if current_user.preferred_language == 'Marathi' %}selected{% endif %}>Marathi</option>
+                        <option value="Kannada" {% if current_user.preferred_language == 'Kannada' %}selected{% endif %}>Kannada</option>
+                        <option value="Tamil" {% if current_user.preferred_language == 'Tamil' %}selected{% endif %}>Tamil</option>
+                    </select>
+                </div>
+                <div class="actions">
+                    <button id="clear-btn" class="btn btn-secondary">Clear</button>
+                    <button id="explain-btn" class="btn btn-primary">Explain Code</button>
+                </div>
             </div>
-            <button class="theme-toggle" id="themeToggle" type="button">Light</button>
-        </header>
+            
+            <div class="editor-container glass">
+                <textarea id="code-editor" placeholder="Paste your code here..."></textarea>
+            </div>
 
-        <section class="stats-grid">
-            <div class="stat-card glass-panel"><span>Programs</span><strong id="programCount">{{ progress.programs_analyzed }}</strong></div>
-            <div class="stat-card glass-panel"><span>Explanations</span><strong id="explanationCount">{{ progress.total_explanations }}</strong></div>
-            <div class="stat-card glass-panel"><span>Concepts</span><strong id="conceptCount">{{ progress.concepts_learned|length }}</strong></div>
-            <div class="stat-card glass-panel"><span>Level</span><strong id="currentLevel">{{ progress.current_level }}</strong></div>
-        </section>
-        <div class="progress-track glass-panel"><span id="progressFill" style="width: {{ [progress.concepts_learned|length * 12.5, 100]|min }}%"></span></div>
-
-        <section class="workspace-grid">
-            <div class="editor-card glass-panel" id="editor">
-                <div class="card-header dashboard-controls">
-                    <div class="editor-title">
-                        <h2>Code Input</h2>
-                        <p>Paste Python, C, C++, Java, or JavaScript code.</p>
+            <div id="analysis-results" class="hidden">
+                <div class="result-grid">
+                    <div class="result-card glass" id="explanation-card">
+                        <h3><i class="fas fa-chalkboard-teacher"></i> Explanation</h3>
+                        <div class="content" id="explanation-content"></div>
+                        <button id="export-pdf-btn" class="btn btn-small"><i class="fas fa-file-pdf"></i> Export PDF</button>
                     </div>
-                    <div class="control-grid">
-                        <div class="language-picker">
-                            <label class="select-label" for="languagePreference">Select Explanation Language</label>
-                            <select id="languagePreference">
-                                <option value="English" {% if user["language_preference"] == "English" %}selected{% endif %}>English</option>
-                                <option value="Telugu" {% if user["language_preference"] == "Telugu" %}selected{% endif %}>Telugu</option>
-                                <option value="Hindi" {% if user["language_preference"] == "Hindi" %}selected{% endif %}>Hindi</option>
-                                <option value="Marathi" {% if user["language_preference"] == "Marathi" %}selected{% endif %}>Marathi</option>
-                                <option value="Kannada" {% if user["language_preference"] == "Kannada" %}selected{% endif %}>Kannada</option>
-                                <option value="Tamil" {% if user["language_preference"] == "Tamil" %}selected{% endif %}>Tamil</option>
-                                <option value="Multiple Languages" {% if user["language_preference"] == "Multiple Languages" %}selected{% endif %}>Multiple Languages</option>
-                            </select>
+                    
+                    <div class="result-card glass" id="concepts-card">
+                        <h3><i class="fas fa-lightbulb"></i> Concepts Detected</h3>
+                        <div class="concept-tags" id="concepts-list"></div>
+                    </div>
+
+                    <div class="result-card glass" id="complexity-card">
+                        <h3><i class="fas fa-tachometer-alt"></i> Complexity Meter</h3>
+                        <div class="meter-container">
+                            <div class="meter-bar"><div id="complexity-fill"></div></div>
+                            <span id="complexity-text"></span>
                         </div>
-                        <div class="language-picker">
-                            <label class="select-label" for="skillMode">Skill Level</label>
-                            <select id="skillMode">
-                                <option value="Beginner" {% if user["skill_level"] == "Beginner" %}selected{% endif %}>Beginner</option>
-                                <option value="Intermediate" {% if user["skill_level"] == "Intermediate" %}selected{% endif %}>Intermediate</option>
-                            </select>
-                        </div>
+                    </div>
+
+                    <div class="result-card glass" id="output-card">
+                        <h3><i class="fas fa-terminal"></i> Expected Output</h3>
+                        <pre id="output-prediction"></pre>
+                    </div>
+
+                    <div class="result-card glass" id="errors-card">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Error Detection</h3>
+                        <div id="errors-list"></div>
+                    </div>
+
+                    <div class="result-card glass" id="quiz-card">
+                        <h3><i class="fas fa-question"></i> Quiz</h3>
+                        <div id="quiz-container"></div>
+                    </div>
+
+                    <div class="result-card glass" id="roadmap-card">
+                        <h3><i class="fas fa-road"></i> Learning Roadmap</h3>
+                        <ul id="roadmap-list"></ul>
                     </div>
                 </div>
-
-                <textarea id="codeInput" spellcheck="false" placeholder="Paste your code here..."></textarea>
-                <div class="button-row">
-                    <button class="primary-button" id="explainBtn" type="button">Explain Code</button>
-                    <button class="secondary-button" id="clearBtn" type="button">Clear</button>
-                </div>
-            </div>
-
-            <div class="output-card glass-panel" id="output">
-                <div class="card-header">
-                    <div>
-                        <h2>AI Explanation</h2>
-                        <p>Line-by-line help appears here.</p>
-                    </div>
-                    <span class="language-badge" id="detectedLanguage">Waiting</span>
-                </div>
-                <div id="outputContent" class="empty-state">Enter code and click Explain Code.</div>
             </div>
         </section>
 
-        <section class="examples-section glass-panel">
-            <div class="card-header">
-                <div>
-                    <h2>Example Programs</h2>
-                    <p>Practice with common beginner examples.</p>
-                </div>
-            </div>
-            <div class="example-grid" id="exampleGrid"></div>
+        <section id="history-section" class="hidden">
+            <h2>Analysis History</h2>
+            <div id="history-list" class="grid-container"></div>
         </section>
 
-        <section class="history-grid">
-            <div class="examples-section glass-panel" id="history">
-                <h2>Analysis History</h2>
-                <div class="history-list" id="historyList"></div>
-            </div>
-            <div class="examples-section glass-panel" id="saved">
-                <h2>Saved Explanations</h2>
-                <div class="history-list" id="favoritesList"></div>
+        <section id="favorites-section" class="hidden">
+            <h2>Saved Explanations</h2>
+            <div id="favorites-list" class="grid-container"></div>
+        </section>
+
+        <section id="progress-section" class="hidden">
+            <h2>Your Progress</h2>
+            <div class="progress-grid">
+                <div class="progress-card glass">
+                    <h4 id="stat-analyzed">0</h4>
+                    <p>Programs Analyzed</p>
+                </div>
+                <div class="progress-card glass">
+                    <h4 id="stat-concepts">0</h4>
+                    <p>Concepts Learned</p>
+                </div>
+                <div class="progress-card glass">
+                    <h4 id="stat-explanations">0</h4>
+                    <p>Explanations Generated</p>
+                </div>
             </div>
         </section>
-    </section>
-</main>
+    </main>
+</div>
+
+<div id="loader" class="hidden">
+    <div class="spinner"></div>
+    <p>AI is analyzing your code...</p>
+</div>
 {% endblock %}
