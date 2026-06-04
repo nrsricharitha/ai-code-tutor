@@ -1,31 +1,30 @@
 {% extends "base.html" %}
-{% set title = "Sign Up - AI Code Tutor" %}
 
 {% block content %}
-<main class="auth-page">
-    <form class="auth-card glass-panel" method="POST">
-        <a class="brand center-brand" href="{{ url_for('index') }}">AI Code Tutor</a>
-        <h1>Create your account</h1>
-        <p>Start learning code with simple multilingual explanations.</p>
-
-        {% if error %}
-            <div class="alert">{{ error }}</div>
-        {% endif %}
-
-        <label for="name">Full Name</label>
-        <input id="name" name="name" type="text" placeholder="Your full name" required>
-
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" placeholder="you@example.com" required>
-
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" placeholder="Create a password" required>
-
-        <label for="confirm_password">Confirm Password</label>
-        <input id="confirm_password" name="confirm_password" type="password" placeholder="Confirm your password" required>
-
-        <button class="primary-button full-button" type="submit">Create Account</button>
-        <p class="switch-link">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+<div class="auth-container glass">
+    <h2>Sign Up</h2>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-error">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="POST">
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" required placeholder="Choose username">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" required placeholder="Enter email">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" required placeholder="Create password">
+        </div>
+        <button type="submit" class="btn btn-primary">Create Account</button>
     </form>
-</main>
+    <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+</div>
 {% endblock %}
