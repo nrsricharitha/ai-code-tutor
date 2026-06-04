@@ -1,744 +1,308 @@
-import json
 import os
-import re
-import sqlite3
-from pathlib import Path
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+from dotenv import load_dotenv
 
-from flask import Flask, jsonify, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash, generate_password_hash
-
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key-for-production")
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-12345')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ai_code_tutor.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-BASE_DIR = Path(__file__).resolve().parent
-DATABASE = BASE_DIR / "ai_code_tutor.db"
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-SUPPORTED_LANGUAGES = ["English", "Telugu", "Hindi", "Marathi", "Kannada", "Tamil"]
+# Models
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
+    skill_level = db.Column(db.String(20), default='Beginner')
+    preferred_language = db.Column(db.String(20), default='English')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    history = db.relationship('AnalysisHistory', backref='user', lazy=True)
+    favorites = db.relationship('Favorite', backref='user', lazy=True)
+    progress = db.relationship('Progress', backref='user', uselist=False)
 
-CONCEPT_TRANSLATIONS = {
-    "variable": {
-        "English": "This line stores or updates data using a variable.",
-        "Telugu": "ఈ లైన్ వేరియబుల్ సహాయంతో డేటాను నిల్వ చేస్తుంది లేదా మార్చుతుంది.",
-        "Hindi": "यह लाइन वेरिएबल की मदद से डेटा को रखती या बदलती है.",
-        "Marathi": "ही ओळ व्हेरिएबलच्या मदतीने डेटा ठेवते किंवा बदलते.",
-        "Kannada": "ಈ ಸಾಲು ವೇರಿಯಬಲ್ ಬಳಸಿ ಡೇಟಾವನ್ನು ಇಡುತ್ತದೆ ಅಥವಾ ಬದಲಿಸುತ್ತದೆ.",
-        "Tamil": "இந்த வரி மாறி மூலம் தரவை சேமிக்கிறது அல்லது மாற்றுகிறது.",
-    },
-    "loop": {
-        "English": "This line starts a loop, which repeats instructions.",
-        "Telugu": "ఈ లైన్ లూప్‌ను ప్రారంభిస్తుంది. లూప్ సూచనలను మళ్లీ మళ్లీ నడిపిస్తుంది.",
-        "Hindi": "यह लाइन लूप शुरू करती है, जो निर्देशों को बार-बार चलाता है.",
-        "Marathi": "ही ओळ लूप सुरू करते, जो सूचना पुन्हा पुन्हा चालवतो.",
-        "Kannada": "ಈ ಸಾಲು ಲೂಪ್ ಆರಂಭಿಸುತ್ತದೆ. ಲೂಪ್ ಸೂಚನೆಗಳನ್ನು ಮರುಮರು ನಡೆಸುತ್ತದೆ.",
-        "Tamil": "இந்த வரி லூப்பை தொடங்குகிறது. லூப் கட்டளைகளை மீண்டும் செய்கிறது.",
-    },
-    "condition": {
-        "English": "This line checks a condition and helps the program choose a path.",
-        "Telugu": "ఈ లైన్ ఒక కండిషన్‌ను చూసి ప్రోగ్రామ్ ఏ దారిలో వెళ్లాలో నిర్ణయిస్తుంది.",
-        "Hindi": "यह लाइन कंडीशन जांचती है और प्रोग्राम को रास्ता चुनने में मदद करती है.",
-        "Marathi": "ही ओळ कंडीशन तपासते आणि प्रोग्रामला योग्य मार्ग निवडायला मदत करते.",
-        "Kannada": "ಈ ಸಾಲು ಕಂಡಿಷನ್ ಪರಿಶೀಲಿಸಿ ಪ್ರೋಗ್ರಾಂ ಯಾವ ದಾರಿ ಹಿಡಿಯಬೇಕು ಎಂದು ನಿರ್ಧರಿಸುತ್ತದೆ.",
-        "Tamil": "இந்த வரி நிபந்தனையை சரிபார்த்து நிரல் எந்த பாதையில் செல்ல வேண்டும் என்பதை தீர்மானிக்கிறது.",
-    },
-    "function": {
-        "English": "This line defines or calls a function, which groups reusable code.",
-        "Telugu": "ఈ లైన్ ఫంక్షన్‌ను నిర్వచిస్తుంది లేదా పిలుస్తుంది. ఫంక్షన్ మళ్లీ వాడే కోడ్‌ను గుంపుగా ఉంచుతుంది.",
-        "Hindi": "यह लाइन फंक्शन को बनाती या चलाती है. फंक्शन दोबारा उपयोग होने वाला कोड रखता है.",
-        "Marathi": "ही ओळ फंक्शन तयार करते किंवा चालवते. फंक्शन पुन्हा वापरता येणारा कोड ठेवते.",
-        "Kannada": "ಈ ಸಾಲು ಫಂಕ್ಷನ್ ಅನ್ನು ರಚಿಸುತ್ತದೆ ಅಥವಾ ಕರೆಯುತ್ತದೆ. ಫಂಕ್ಷನ್ ಮರುಬಳಕೆ ಕೋಡ್ ಅನ್ನು ಗುಂಪಾಗಿಸುತ್ತದೆ.",
-        "Tamil": "இந்த வரி செயல்பாட்டை உருவாக்குகிறது அல்லது அழைக்கிறது. செயல்பாடு மீண்டும் பயன்படுத்தும் கோடை குழுவாக வைத்திருக்கும்.",
-    },
-    "array": {
-        "English": "This line uses an array or list to store many values together.",
-        "Telugu": "ఈ లైన్ ఎన్నో విలువలను కలిపి నిల్వ చేయడానికి అర్రే లేదా లిస్ట్‌ను ఉపయోగిస్తుంది.",
-        "Hindi": "यह लाइन कई वैल्यू को साथ रखने के लिए अरे या लिस्ट का उपयोग करती है.",
-        "Marathi": "ही ओळ अनेक मूल्ये एकत्र ठेवण्यासाठी अ‍ॅरे किंवा लिस्ट वापरते.",
-        "Kannada": "ಈ ಸಾಲು ಹಲವು ಮೌಲ್ಯಗಳನ್ನು ಒಟ್ಟಿಗೆ ಇಡಲು ಅರೆ ಅಥವಾ ಲಿಸ್ಟ್ ಬಳಸುತ್ತದೆ.",
-        "Tamil": "இந்த வரி பல மதிப்புகளை ஒன்றாக சேமிக்க அணி அல்லது பட்டியலை பயன்படுத்துகிறது.",
-    },
-    "class": {
-        "English": "This line creates a class, which is a blueprint for objects.",
-        "Telugu": "ఈ లైన్ క్లాస్‌ను సృష్టిస్తుంది. క్లాస్ అనేది ఆబ్జెక్టుల కోసం బ్లూప్రింట్‌లాంటిది.",
-        "Hindi": "यह लाइन क्लास बनाती है. क्लास ऑब्जेक्ट बनाने का ब्लूप्रिंट होती है.",
-        "Marathi": "ही ओळ क्लास तयार करते. क्लास म्हणजे ऑब्जेक्टसाठी आराखडा असतो.",
-        "Kannada": "ಈ ಸಾಲು ಕ್ಲಾಸ್ ರಚಿಸುತ್ತದೆ. ಕ್ಲಾಸ್ ಆಬ್ಜೆಕ್ಟ್‌ಗಳಿಗೆ ಬ್ಲೂಪ್ರಿಂಟ್ ಆಗಿದೆ.",
-        "Tamil": "இந்த வரி class-ஐ உருவாக்குகிறது. Class என்பது object-களுக்கான வரைபடம் போன்றது.",
-    },
-    "object": {
-        "English": "This line creates or uses an object, which stores data and behavior together.",
-        "Telugu": "ఈ లైన్ ఆబ్జెక్ట్‌ను సృష్టిస్తుంది లేదా ఉపయోగిస్తుంది. ఆబ్జెక్ట్ డేటా మరియు పనులను కలిపి ఉంచుతుంది.",
-        "Hindi": "यह लाइन ऑब्जेक्ट बनाती या उपयोग करती है. ऑब्जेक्ट डेटा और व्यवहार को साथ रखता है.",
-        "Marathi": "ही ओळ ऑब्जेक्ट तयार करते किंवा वापरते. ऑब्जेक्ट डेटा आणि वर्तन एकत्र ठेवतो.",
-        "Kannada": "ಈ ಸಾಲು ಆಬ್ಜೆಕ್ಟ್ ರಚಿಸುತ್ತದೆ ಅಥವಾ ಬಳಸುತ್ತದೆ. ಆಬ್ಜೆಕ್ಟ್ ಡೇಟಾ ಮತ್ತು ವರ್ತನೆಯನ್ನು ಒಟ್ಟಿಗೆ ಇಡುತ್ತದೆ.",
-        "Tamil": "இந்த வரி object-ஐ உருவாக்குகிறது அல்லது பயன்படுத்துகிறது. Object தரவு மற்றும் செயல்களை ஒன்றாக வைத்திருக்கும்.",
-    },
-    "recursion": {
-        "English": "This line suggests recursion, where a function calls itself.",
-        "Telugu": "ఈ లైన్ రికర్షన్‌ను సూచిస్తుంది. రికర్షన్‌లో ఫంక్షన్ తనను తానే పిలుస్తుంది.",
-        "Hindi": "यह लाइन रिकर्शन दिखाती है, जहां फंक्शन खुद को ही कॉल करता है.",
-        "Marathi": "ही ओळ रिकर्शन दाखवते, जिथे फंक्शन स्वतःलाच कॉल करते.",
-        "Kannada": "ಈ ಸಾಲು ರಿಕರ್ಷನ್ ಸೂಚಿಸುತ್ತದೆ. ರಿಕರ್ಷನ್‌ನಲ್ಲಿ ಫಂಕ್ಷನ್ ತನ್ನನ್ನೇ ಕರೆಯುತ್ತದೆ.",
-        "Tamil": "இந்த வரி recursion-ஐ குறிக்கிறது. Recursion-ல் function தன்னையே அழைக்கிறது.",
-    },
-    "input": {
-        "English": "This line takes input from the user.",
-        "Telugu": "ఈ లైన్ యూజర్ నుండి ఇన్‌పుట్ తీసుకుంటుంది.",
-        "Hindi": "यह लाइन यूजर से इनपुट लेती है.",
-        "Marathi": "ही ओळ वापरकर्त्याकडून इनपुट घेते.",
-        "Kannada": "ಈ ಸಾಲು ಬಳಕೆದಾರರಿಂದ ಇನ್‌ಪುಟ್ ಪಡೆಯುತ್ತದೆ.",
-        "Tamil": "இந்த வரி பயனரிடமிருந்து input பெறுகிறது.",
-    },
-    "output": {
-        "English": "This line displays output on the screen.",
-        "Telugu": "ఈ లైన్ ఫలితాన్ని స్క్రీన్‌పై చూపిస్తుంది.",
-        "Hindi": "यह लाइन स्क्रीन पर आउटपुट दिखाती है.",
-        "Marathi": "ही ओळ स्क्रीनवर आउटपुट दाखवते.",
-        "Kannada": "ಈ ಸಾಲು ಪರದೆಯ ಮೇಲೆ ಔಟ್‌ಪುಟ್ ತೋರಿಸುತ್ತದೆ.",
-        "Tamil": "இந்த வரி திரையில் output காட்டுகிறது.",
-    },
-    "general": {
-        "English": "This line performs one small step in the program.",
-        "Telugu": "ఈ లైన్ ప్రోగ్రామ్‌లో ఒక చిన్న దశను పూర్తి చేస్తుంది.",
-        "Hindi": "यह लाइन प्रोग्राम में एक छोटा कदम पूरा करती है.",
-        "Marathi": "ही ओळ प्रोग्राममधील एक छोटा टप्पा पूर्ण करते.",
-        "Kannada": "ಈ ಸಾಲು ಪ್ರೋಗ್ರಾಂನಲ್ಲಿ ಒಂದು ಸಣ್ಣ ಹಂತವನ್ನು ಪೂರ್ಣಗೊಳಿಸುತ್ತದೆ.",
-        "Tamil": "இந்த வரி நிரலில் ஒரு சிறிய படியை முடிக்கிறது.",
-    },
-}
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
 
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
-def get_db_connection():
-    """Open a SQLite connection and return rows as dictionary-like objects."""
-    connection = sqlite3.connect(DATABASE)
-    connection.row_factory = sqlite3.Row
-    return connection
+class AnalysisHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    code_content = db.Column(db.Text, nullable=False)
+    programming_language = db.Column(db.String(20))
+    explanation = db.Column(db.Text)
+    concepts_detected = db.Column(db.String(200)) # JSON string
+    complexity_score = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Favorite(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    history_id = db.Column(db.Integer, db.ForeignKey('analysis_history.id'), nullable=False)
+    title = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-def init_db():
-    """Create all database tables needed by the app."""
-    connection = get_db_connection()
-    cursor = connection.cursor()
+class Progress(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    programs_analyzed = db.Column(db.Integer, default=0)
+    concepts_learned = db.Column(db.Integer, default=0)
+    total_explanations = db.Column(db.Integer, default=0)
 
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            skill_level TEXT DEFAULT '',
-            language_preference TEXT DEFAULT ''
-        )
-        """
-    )
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS analysis_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            code TEXT NOT NULL,
-            language TEXT NOT NULL,
-            preference TEXT NOT NULL,
-            skill_mode TEXT NOT NULL,
-            result_json TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-        """
-    )
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS saved_explanations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            history_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(user_id, history_id),
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (history_id) REFERENCES analysis_history (id)
-        )
-        """
-    )
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS progress_tracking (
-            user_id INTEGER PRIMARY KEY,
-            programs_analyzed INTEGER DEFAULT 0,
-            total_explanations INTEGER DEFAULT 0,
-            concepts_json TEXT DEFAULT '[]',
-            current_level TEXT DEFAULT 'Beginner',
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-        """
-    )
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
-    connection.commit()
-    connection.close()
-
-
-def current_user():
-    """Return the logged-in user, or None when logged out."""
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-    connection = get_db_connection()
-    user = connection.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    connection.close()
-    return user
-
-
-def login_required(view_function):
-    """Protect routes that require a login."""
-    def wrapped_view(*args, **kwargs):
-        if not session.get("user_id"):
-            return redirect(url_for("login"))
-        return view_function(*args, **kwargs)
-
-    wrapped_view.__name__ = view_function.__name__
-    return wrapped_view
-
-
-def detect_language(code):
-    """Detect the most likely programming language."""
-    lowered = code.lower()
-    if "public static void main" in lowered or "system.out.println" in lowered:
-        return "Java"
-    if "#include" in code and ("cout <<" in code or "cin >>" in code or "using namespace std" in lowered):
-        return "C++"
-    if "#include" in code or "printf(" in code or "scanf(" in code:
-        return "C"
-    if "function " in code or "console.log" in code or re.search(r"\b(let|const|var)\s+\w+", code):
-        return "JavaScript"
-    if "def " in code or "print(" in code or "input(" in code or re.search(r"^\s*for .+ in .+:", code, re.MULTILINE):
-        return "Python"
-    return "Unknown"
-
-
-def selected_languages(preference):
-    """Convert a dropdown preference into languages to display."""
-    if preference in ["Multiple Languages", "Both"]:
-        return SUPPORTED_LANGUAGES
-    if preference in SUPPORTED_LANGUAGES:
-        return [preference]
-    return ["English"]
-
-
-def classify_line(line):
-    """Classify one line and return concept keys."""
-    stripped = line.strip()
-    concepts = []
-
-    if not stripped:
-        return ["general"]
-    if stripped.startswith(("//", "#")):
-        return ["general"]
-    if re.search(r"\b(for|while|do)\b", stripped):
-        concepts.append("loop")
-    if re.search(r"\b(if|else if|elif|else|switch|case)\b", stripped):
-        concepts.append("condition")
-    if re.search(r"\b(def|function)\b|[a-zA-Z_]\w*\s+\w+\s*\([^)]*\)\s*\{?", stripped):
-        concepts.append("function")
-    if re.search(r"\bclass\b", stripped):
-        concepts.append("class")
-    if re.search(r"\bnew\s+[A-Z]\w*\s*\(", stripped):
-        concepts.append("object")
-    if re.search(r"\b(input|scanf|cin\s*>>|prompt)\b", stripped):
-        concepts.append("input")
-    if re.search(r"\b(print|printf|cout\s*<<|console\.log|System\.out\.println)\b", stripped):
-        concepts.append("output")
-    if re.search(r"\[[^\]]*\]", stripped):
-        concepts.append("array")
-    if re.search(r"\b(int|float|double|char|string|String|boolean|bool|var|let|const)\b|=", stripped):
-        concepts.append("variable")
-
-    # A simple recursion hint: a function-like name appears before and inside parentheses.
-    function_names = re.findall(r"\b(?:def|function|int|void|public|private|static)\s+([A-Za-z_]\w*)\s*\(", stripped)
-    if function_names and any(name + "(" in stripped[stripped.find("("):] for name in function_names):
-        concepts.append("recursion")
-
-    return concepts or ["general"]
-
-
-def line_explanations_for(concepts):
-    """Create translated explanations for a line from its detected concepts."""
-    result = {}
-    primary = concepts[0] if concepts else "general"
-    for language in SUPPORTED_LANGUAGES:
-        result[language] = CONCEPT_TRANSLATIONS.get(primary, CONCEPT_TRANSLATIONS["general"])[language]
-    return result
-
-
-def detect_errors(code, language):
-    """Detect common beginner syntax mistakes."""
-    errors = []
-    lines = code.splitlines()
-
-    if language in ["C", "C++", "Java", "JavaScript"]:
-        for index, line in enumerate(lines, start=1):
-            stripped = line.strip()
-            skip = (
-                not stripped
-                or stripped.startswith(("//", "#"))
-                or stripped.endswith((";", "{", "}", ":"))
-                or re.match(r"^(if|for|while|else|switch|class|public|private|function)\b", stripped)
-            )
-            if not skip and re.search(r"\b(int|float|double|char|string|String|boolean|bool|let|const|var|printf|cout|console\.log|System\.out\.println)\b", stripped):
-                errors.append({
-                    "line": index,
-                    "title": "Possible missing semicolon",
-                    "message": "This statement may need a semicolon at the end.",
-                    "fix": "Add ';' after the statement.",
-                })
-
-    for opening, closing in [("{", "}"), ("(", ")"), ("[", "]")]:
-        if code.count(opening) != code.count(closing):
-            errors.append({
-                "line": None,
-                "title": f"Unmatched {opening}{closing} brackets",
-                "message": "Opening and closing brackets should be balanced.",
-                "fix": f"Check that every '{opening}' has a matching '{closing}'.",
-            })
-
-    if language == "Python":
-        for index, line in enumerate(lines, start=1):
-            stripped = line.strip()
-            if re.match(r"^(if|for|while|def|elif|else|class)\b", stripped) and not stripped.endswith(":"):
-                errors.append({
-                    "line": index,
-                    "title": "Possible missing colon",
-                    "message": "Python block statements usually end with ':'.",
-                    "fix": "Add ':' at the end of the line.",
-                })
-    return errors
-
-
-def predict_output(code, language):
-    """Predict simple outputs from common print statements."""
-    patterns = [
-        r'print\s*\(\s*["\']([^"\']+)["\']\s*\)',
-        r'console\.log\s*\(\s*["\']([^"\']+)["\']\s*\)',
-        r'System\.out\.println\s*\(\s*["\']([^"\']+)["\']\s*\)',
-        r'printf\s*\(\s*["\']([^"\'%]+)["\']\s*\)',
-        r'cout\s*<<\s*["\']([^"\']+)["\']',
-    ]
-    outputs = []
-    for pattern in patterns:
-        outputs.extend(re.findall(pattern, code))
-    return "\n".join(outputs) if outputs else "Output prediction is not certain for this code."
-
-
-def analyze_complexity(code, concepts):
-    """Return a beginner-friendly complexity level and 1-10 score."""
-    score = 1
-    score += min(len(code.splitlines()) // 5, 3)
-    score += 1 if "loop" in concepts else 0
-    score += 1 if "condition" in concepts else 0
-    score += 1 if "function" in concepts else 0
-    score += 1 if "array" in concepts else 0
-    score += 2 if "class" in concepts or "object" in concepts else 0
-    score += 2 if "recursion" in concepts else 0
-    score = min(score, 10)
-    if score <= 3:
-        level = "Beginner"
-    elif score <= 6:
-        level = "Intermediate"
-    else:
-        level = "Advanced"
-    return {"level": level, "score": score}
-
-
-def learning_roadmap(concepts):
-    """Suggest next topics based on missing concepts."""
-    topic_map = {
-        "variable": "Variables and Data Types",
-        "condition": "If-Else Conditions",
-        "loop": "Loops",
-        "function": "Functions",
-        "array": "Arrays and Lists",
-        "class": "Object-Oriented Programming",
-        "object": "Objects",
-        "recursion": "Recursion",
-    }
-    missing = [topic for key, topic in topic_map.items() if key not in concepts]
-    return missing[:5] or ["Data Structures", "Algorithms", "Debugging Practice"]
-
-
-def generate_quiz(concepts, language, output):
-    """Generate simple quiz questions from detected code concepts."""
-    questions = []
-    if "loop" in concepts:
-        questions.append("What does the loop repeat?")
-    if "variable" in concepts:
-        questions.append("Which variables store important values?")
-    if "condition" in concepts:
-        questions.append("What decision does the condition make?")
-    if "function" in concepts:
-        questions.append("What task does the function perform?")
-    if output and "not certain" not in output:
-        questions.append("What is the expected output?")
-    questions.append(f"Which programming language was detected as {language}?")
-    return questions[:5]
-
-
-def build_explanation(code, preference, skill_mode="Beginner"):
-    """Analyze code and return a complete structured result."""
-    language = detect_language(code)
-    display_languages = selected_languages(preference)
-    lines = []
-    detected = set()
-
-    for number, line in enumerate(code.splitlines(), start=1):
-        concepts = classify_line(line)
-        detected.update(concept for concept in concepts if concept != "general")
-        explanations = line_explanations_for(concepts)
-        if skill_mode == "Intermediate":
-            for lang in explanations:
-                explanations[lang] += " It is useful for understanding program flow."
-        lines.append({
-            "number": number,
-            "code": line,
-            "concepts": concepts,
-            "explanations": explanations,
-        })
-
-    concepts_list = sorted(detected)
-    complexity = analyze_complexity(code, concepts_list)
-    output = predict_output(code, language)
-    errors = detect_errors(code, language)
-    roadmap = learning_roadmap(concepts_list)
-    quiz = generate_quiz(concepts_list, language, output)
-
-    summaries = {
-        "English": f"This {language} program uses {', '.join(concepts_list) if concepts_list else 'basic instructions'} to complete its task.",
-        "Telugu": "ఈ ప్రోగ్రామ్ చిన్న చిన్న సూచనలను ఉపయోగించి పని పూర్తి చేస్తుంది.",
-        "Hindi": "यह प्रोग्राम छोटे निर्देशों का उपयोग करके अपना काम पूरा करता है.",
-        "Marathi": "हा प्रोग्राम छोट्या सूचनांचा वापर करून आपले काम पूर्ण करतो.",
-        "Kannada": "ಈ ಪ್ರೋಗ್ರಾಂ ಸಣ್ಣ ಸೂಚನೆಗಳನ್ನು ಬಳಸಿ ತನ್ನ ಕೆಲಸವನ್ನು ಪೂರ್ಣಗೊಳಿಸುತ್ತದೆ.",
-        "Tamil": "இந்த நிரல் சிறிய கட்டளைகளை பயன்படுத்தி தனது பணியை முடிக்கிறது.",
-    }
-
-    return {
-        "language": language,
-        "preference": preference,
-        "skill_mode": skill_mode,
-        "selected_languages": display_languages,
-        "supported_languages": SUPPORTED_LANGUAGES,
-        "lines": lines,
-        "concepts": concepts_list,
-        "complexity": complexity,
-        "expected_output": output,
-        "errors": errors,
-        "roadmap": roadmap,
-        "quiz": quiz,
-        "summaries": summaries,
-    }
-
-
-def ensure_progress(user_id):
-    """Create a progress row if the user does not have one."""
-    connection = get_db_connection()
-    connection.execute(
-        "INSERT OR IGNORE INTO progress_tracking (user_id) VALUES (?)",
-        (user_id,),
-    )
-    connection.commit()
-    connection.close()
-
-
-def update_progress(user_id, concepts, complexity_level):
-    """Update progress counters after an analysis."""
-    ensure_progress(user_id)
-    connection = get_db_connection()
-    progress = connection.execute(
-        "SELECT * FROM progress_tracking WHERE user_id = ?",
-        (user_id,),
-    ).fetchone()
-    learned = set(json.loads(progress["concepts_json"] or "[]"))
-    learned.update(concepts)
-    connection.execute(
-        """
-        UPDATE progress_tracking
-        SET programs_analyzed = programs_analyzed + 1,
-            total_explanations = total_explanations + 1,
-            concepts_json = ?,
-            current_level = ?
-        WHERE user_id = ?
-        """,
-        (json.dumps(sorted(learned)), complexity_level, user_id),
-    )
-    connection.commit()
-    connection.close()
-
-
-def get_progress(user_id):
-    """Return progress data for the dashboard."""
-    ensure_progress(user_id)
-    connection = get_db_connection()
-    progress = connection.execute(
-        "SELECT * FROM progress_tracking WHERE user_id = ?",
-        (user_id,),
-    ).fetchone()
-    connection.close()
-    concepts = json.loads(progress["concepts_json"] or "[]")
-    return {
-        "programs_analyzed": progress["programs_analyzed"],
-        "total_explanations": progress["total_explanations"],
-        "concepts_learned": concepts,
-        "current_level": progress["current_level"],
-    }
-
-
-@app.route("/")
+# Routes
+@app.route('/')
 def index():
-    return render_template("index.html", user=current_user())
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
 
-
-@app.route("/signup", methods=["GET", "POST"])
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        user_exists = User.query.filter((User.username == username) | (User.email == email)).first()
+        if user_exists:
+            flash('Username or Email already exists')
+            return redirect(url_for('signup'))
+        
+        new_user = User(username=username, email=email)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # Initialize progress
+        progress = Progress(user_id=new_user.id)
+        db.session.add(progress)
+        db.session.commit()
+        
+        login_user(new_user)
+        return redirect(url_for('profile_setup'))
+    return render_template('signup.html')
 
-        if not name or not email or not password or not confirm_password:
-            return render_template("signup.html", error="Please fill in all fields.")
-        if password != confirm_password:
-            return render_template("signup.html", error="Passwords do not match.")
-
-        connection = get_db_connection()
-        try:
-            cursor = connection.execute(
-                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-                (name, email, generate_password_hash(password)),
-            )
-            connection.commit()
-            session.clear()
-            session["user_id"] = cursor.lastrowid
-            ensure_progress(cursor.lastrowid)
-            return redirect(url_for("setup"))
-        except sqlite3.IntegrityError:
-            return render_template("signup.html", error="An account with this email already exists.")
-        finally:
-            connection.close()
-    return render_template("signup.html")
-
-
-@app.route("/login", methods=["GET", "POST"])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        connection = get_db_connection()
-        user = connection.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        connection.close()
-        if user and check_password_hash(user["password_hash"], password):
-            session.clear()
-            session["user_id"] = user["id"]
-            ensure_progress(user["id"])
-            if user["skill_level"] and user["language_preference"]:
-                return redirect(url_for("dashboard"))
-            return redirect(url_for("setup"))
-        return render_template("login.html", error="Invalid email or password.")
-    return render_template("login.html", success=request.args.get("success", ""))
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('dashboard'))
+        flash('Invalid username or password')
+    return render_template('login.html')
 
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("index"))
-
-
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        connection = get_db_connection()
-        user = connection.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        connection.close()
-        if not user:
-            return render_template("forgot_password.html", error="Email not found.")
-        session["reset_email"] = email
-        return redirect(url_for("reset_password"))
-    return render_template("forgot_password.html")
-
-
-@app.route("/reset-password", methods=["GET", "POST"])
-def reset_password():
-    reset_email = session.get("reset_email")
-    if not reset_email:
-        return redirect(url_for("forgot_password"))
-    if request.method == "POST":
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
-        if not password or not confirm_password:
-            return render_template("reset_password.html", email=reset_email, error="Please fill in all fields.")
-        if password != confirm_password:
-            return render_template("reset_password.html", email=reset_email, error="Passwords do not match.")
-        connection = get_db_connection()
-        connection.execute(
-            "UPDATE users SET password_hash = ? WHERE email = ?",
-            (generate_password_hash(password), reset_email),
-        )
-        connection.commit()
-        connection.close()
-        session.pop("reset_email", None)
-        return redirect(url_for("login", success="Password updated successfully."))
-    return render_template("reset_password.html", email=reset_email)
-
-
-@app.route("/setup", methods=["GET", "POST"])
+@app.route('/logout')
 @login_required
-def setup():
-    user = current_user()
-    if request.method == "POST":
-        skill_level = request.form.get("skill_level", "Beginner")
-        language_preference = request.form.get("language_preference", "English")
-        connection = get_db_connection()
-        connection.execute(
-            "UPDATE users SET skill_level = ?, language_preference = ? WHERE id = ?",
-            (skill_level, language_preference, user["id"]),
-        )
-        connection.commit()
-        connection.close()
-        return redirect(url_for("dashboard"))
-    return render_template("setup.html", user=user, languages=SUPPORTED_LANGUAGES)
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
+@app.route('/profile-setup', methods=['GET', 'POST'])
+@login_required
+def profile_setup():
+    if request.method == 'POST':
+        current_user.skill_level = request.form.get('skill_level')
+        current_user.preferred_language = request.form.get('preferred_language')
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+    return render_template('profile_setup.html')
 
-@app.route("/dashboard")
+@app.route('/dashboard')
 @login_required
 def dashboard():
-    user = current_user()
-    return render_template("dashboard.html", user=user, progress=get_progress(user["id"]))
+    history = AnalysisHistory.query.filter_by(user_id=current_user.id).order_by(AnalysisHistory.created_at.desc()).limit(10).all()
+    return render_template('dashboard.html', history=history)
 
-
-@app.route("/api/explain", methods=["POST"])
+@app.route('/api/analyze', methods=['POST'])
 @login_required
-def explain_code():
-    user = current_user()
-    payload = request.get_json() or {}
-    code = payload.get("code", "").strip()
-    preference = payload.get("preference") or user["language_preference"] or "English"
-    skill_mode = payload.get("skill_mode") or user["skill_level"] or "Beginner"
-    if not code:
-        return jsonify({"error": "Please enter code before asking for an explanation."}), 400
+def analyze_code():
+    data = request.json
+    code = data.get('code')
+    prog_lang = data.get('language')
+    explanation_lang = data.get('explanation_language', current_user.preferred_language)
+    skill_level = data.get('skill_level', current_user.skill_level)
 
-    result = build_explanation(code, preference, skill_mode)
-    connection = get_db_connection()
-    cursor = connection.execute(
-        """
-        INSERT INTO analysis_history (user_id, code, language, preference, skill_mode, result_json)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (user["id"], code, result["language"], preference, skill_mode, json.dumps(result, ensure_ascii=False)),
+    # In a real scenario, we'd call OpenAI here. 
+    # For now, we'll create a helper function to simulate or call the AI.
+    analysis_result = perform_ai_analysis(code, prog_lang, explanation_lang, skill_level)
+    
+    # Save to history
+    history = AnalysisHistory(
+        user_id=current_user.id,
+        code_content=code,
+        programming_language=prog_lang,
+        explanation=analysis_result['explanation'],
+        concepts_detected=analysis_result['concepts'],
+        complexity_score=analysis_result['complexity_score']
     )
-    connection.commit()
-    history_id = cursor.lastrowid
-    connection.close()
+    db.session.add(history)
+    
+    # Update progress
+    progress = Progress.query.filter_by(user_id=current_user.id).first()
+    if progress:
+        progress.programs_analyzed += 1
+        progress.total_explanations += 1
+        # Simple logic for concepts learned: count unique concepts in this analysis
+        # (This is simplified for the demo)
+        progress.concepts_learned += len(analysis_result['concepts'].split(','))
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': history.id,
+        'explanation': analysis_result['explanation'],
+        'concepts': analysis_result['concepts'],
+        'complexity': analysis_result['complexity_score'],
+        'errors': analysis_result['errors'],
+        'output_prediction': analysis_result['output_prediction'],
+        'quiz': analysis_result['quiz'],
+        'roadmap': analysis_result['roadmap']
+    })
 
-    update_progress(user["id"], result["concepts"], result["complexity"]["level"])
-    result["history_id"] = history_id
-    result["progress"] = get_progress(user["id"])
-    return jsonify(result)
-
-
-@app.route("/api/history")
+@app.route('/api/favorites/add', methods=['POST'])
 @login_required
-def history():
-    user = current_user()
-    connection = get_db_connection()
-    rows = connection.execute(
-        """
-        SELECT h.id, h.language, h.preference, h.created_at, h.code,
-               CASE WHEN s.id IS NULL THEN 0 ELSE 1 END AS is_favorite
-        FROM analysis_history h
-        LEFT JOIN saved_explanations s ON s.history_id = h.id AND s.user_id = h.user_id
-        WHERE h.user_id = ?
-        ORDER BY h.created_at DESC
-        LIMIT 20
-        """,
-        (user["id"],),
-    ).fetchall()
-    connection.close()
-    return jsonify([dict(row) for row in rows])
+def add_favorite():
+    data = request.json
+    history_id = data.get('history_id')
+    title = data.get('title', 'Saved Explanation')
+    
+    fav = Favorite(user_id=current_user.id, history_id=history_id, title=title)
+    db.session.add(fav)
+    db.session.commit()
+    return jsonify({'status': 'success'})
 
-
-@app.route("/api/history/<int:history_id>")
+@app.route('/api/history')
 @login_required
-def history_detail(history_id):
-    user = current_user()
-    connection = get_db_connection()
-    row = connection.execute(
-        "SELECT * FROM analysis_history WHERE id = ? AND user_id = ?",
-        (history_id, user["id"]),
-    ).fetchone()
-    favorite = connection.execute(
-        "SELECT id FROM saved_explanations WHERE history_id = ? AND user_id = ?",
-        (history_id, user["id"]),
-    ).fetchone()
-    connection.close()
-    if not row:
-        return jsonify({"error": "History item not found."}), 404
-    result = json.loads(row["result_json"])
-    result["history_id"] = row["id"]
-    result["is_favorite"] = bool(favorite)
-    result["code"] = row["code"]
-    return jsonify(result)
+def get_history():
+    history = AnalysisHistory.query.filter_by(user_id=current_user.id).order_by(AnalysisHistory.created_at.desc()).all()
+    return jsonify([{
+        'id': h.id,
+        'code': h.code_content,
+        'lang': h.programming_language,
+        'date': h.created_at.strftime('%Y-%m-%d %H:%M')
+    } for h in history])
 
-
-@app.route("/api/favorite/<int:history_id>", methods=["POST"])
-@login_required
-def favorite(history_id):
-    user = current_user()
-    connection = get_db_connection()
-    row = connection.execute(
-        "SELECT id, language FROM analysis_history WHERE id = ? AND user_id = ?",
-        (history_id, user["id"]),
-    ).fetchone()
-    if not row:
-        connection.close()
-        return jsonify({"error": "History item not found."}), 404
-    existing = connection.execute(
-        "SELECT id FROM saved_explanations WHERE history_id = ? AND user_id = ?",
-        (history_id, user["id"]),
-    ).fetchone()
-    if existing:
-        connection.execute("DELETE FROM saved_explanations WHERE id = ?", (existing["id"],))
-        saved = False
-    else:
-        connection.execute(
-            "INSERT INTO saved_explanations (user_id, history_id, title) VALUES (?, ?, ?)",
-            (user["id"], history_id, f"{row['language']} explanation"),
+def perform_ai_analysis(code, prog_lang, explanation_lang, skill_level):
+    from openai import OpenAI
+    client = OpenAI() # Uses pre-configured sandbox environment
+    
+    prompt = f"""
+    Analyze the following {prog_lang} code for a {skill_level} student.
+    Provide the response in {explanation_lang}.
+    
+    Code:
+    {code}
+    
+    Return a JSON object with:
+    1. "explanation": A line-by-line beginner-friendly explanation.
+    2. "concepts": A comma-separated list of programming concepts detected (e.g., Loops, Variables).
+    3. "complexity_score": An integer from 1 to 10.
+    4. "errors": A list of objects with "description", "fix", and "line".
+    5. "output_prediction": The expected output of the code.
+    6. "quiz": A list of 3-5 multiple choice questions about the code.
+    7. "roadmap": A list of 3 topics to learn next.
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": "You are an expert programming tutor."},
+                      {"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
         )
-        saved = True
-    connection.commit()
-    connection.close()
-    return jsonify({"saved": saved})
+        import json
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        # Fallback if AI fails
+        return {
+            "explanation": "Could not generate explanation at this time.",
+            "concepts": "Unknown",
+            "complexity_score": 0,
+            "errors": [],
+            "output_prediction": "N/A",
+            "quiz": [],
+            "roadmap": []
+        }
 
-
-@app.route("/api/favorites")
+@app.route('/api/progress')
 @login_required
-def favorites():
-    user = current_user()
-    connection = get_db_connection()
-    rows = connection.execute(
-        """
-        SELECT s.id, s.history_id, s.title, s.created_at, h.language, h.code
-        FROM saved_explanations s
-        JOIN analysis_history h ON h.id = s.history_id
-        WHERE s.user_id = ?
-        ORDER BY s.created_at DESC
-        """,
-        (user["id"],),
-    ).fetchall()
-    connection.close()
-    return jsonify([dict(row) for row in rows])
+def get_progress():
+    p = Progress.query.filter_by(user_id=current_user.id).first()
+    if not p:
+        return jsonify({})
+    return jsonify({
+        'programs_analyzed': p.programs_analyzed,
+        'concepts_learned': p.concepts_learned,
+        'total_explanations': p.total_explanations,
+        'skill_level': current_user.skill_level
+    })
 
+@app.route('/api/export-pdf', methods=['POST'])
+@login_required
+def export_pdf():
+    from fpdf import FPDF
+    data = request.json
+    
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="AI Code Tutor - Analysis Report", ln=True, align='C')
+    
+    pdf.set_font("Arial", size=12)
+    pdf.ln(10)
+    pdf.cell(200, 10, txt=f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
+    pdf.cell(200, 10, txt=f"User: {current_user.username}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt="Code:", ln=True)
+    pdf.set_font("Courier", size=10)
+    pdf.multi_cell(0, 5, txt=data.get('code', ''))
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt="Explanation:", ln=True)
+    pdf.set_font("Arial", size=11)
+    pdf.multi_cell(0, 5, txt=data.get('explanation', ''))
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt="Quiz:", ln=True)
+    pdf.set_font("Arial", size=11)
+    for i, q in enumerate(data.get('quiz', []), 1):
+        pdf.multi_cell(0, 5, txt=f"Q{i}: {q.get('question', '')}")
+        pdf.ln(2)
 
-init_db()
+    # Save to a temporary file
+    output_path = f"/tmp/report_{current_user.id}.pdf"
+    pdf.output(output_path)
+    
+    from flask import send_file
+    return send_file(output_path, as_attachment=True, download_name="ai_code_tutor_report.pdf")
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
