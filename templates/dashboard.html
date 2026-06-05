@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | AI Code Tutor{% endblock %}
+
+{% block nav %}
+<nav class="dashboard-nav">
+    <div>
+        <span class="nav-kicker">Learning workspace</span>
+        <strong>Hi, {{ session.get("user_name", "Coder") }}</strong>
+    </div>
+    <div class="nav-actions">
+        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">☾</button>
+        <a class="btn btn-ghost" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-screen">
+    <section class="stats-grid reveal">
+        <article class="stat-card">
+            <span>Programs analyzed</span>
+            <strong id="programsStat">{{ progress.programs_analyzed }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Total explanations</span>
+            <strong id="explanationsStat">{{ progress.total_explanations }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Current level</span>
+            <strong id="levelStat">{{ progress.current_level }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Concepts learned</span>
+            <strong id="conceptsStat">{{ concepts_learned|length }}</strong>
+        </article>
+    </section>
+
+    <section class="workspace-grid">
+        <div class="code-panel reveal">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">Analyze any program</p>
+                    <h1>Code Tutor Dashboard</h1>
+                </div>
+                <div class="status-pill" id="statusPill">Ready</div>
+            </div>
+
+            <textarea id="codeInput" class="code-input" spellcheck="false" placeholder="Paste Python, C, C++, Java, or JavaScript code here..."></textarea>
+
+            <div class="controls-grid">
+                <label>
+                    <span>Programming Language</span>
+                    <select id="codeLanguageSelect">
+                        {% for key, label in code_languages.items() %}
+                            <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>Explanation Language</span>
+                    <select id="languageSelect">
+                        {% for key, label in explanation_languages.items() %}
+                            <option value="{{ key }}" {% if key == preferred_language %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>Skill Level</span>
+                    <select id="skillSelect">
+                        {% for key, label in skill_levels.items() %}
+                            <option value="{{ key }}" {% if key == user.skill_level %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <div class="action-row">
+                    <button class="btn btn-primary" id="explainBtn" type="button">Explain Code</button>
+                    <button class="btn btn-secondary" id="clearBtn" type="button">Clear</button>
+                    <button class="btn btn-accent" id="favoriteBtn" type="button" disabled>Save Favorite</button>
+                    <a class="btn btn-ghost disabled" id="downloadBtn" href="#" aria-disabled="true">Download PDF</a>
+                </div>
+            </div>
+        </div>
+
+        <aside class="side-stack reveal delay-1">
+            <section class="side-card">
+                <div class="panel-heading compact">
+                    <h2>Analysis History</h2>
+                </div>
+                <div id="historyList" class="history-list">
+                    {% for item in history %}
+                        <button class="history-item" data-history-id="{{ item.id }}" type="button">
+                            <span>{{ item.title }}</span>
+                            <small>{{ item.code_language|title }} • {{ item.created_at }}</small>
+                        </button>
+                    {% else %}
+                        <p class="muted">No programs analyzed yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="side-card">
+                <div class="panel-heading compact">
+                    <h2>Saved Explanations</h2>
+                </div>
+                <div id="favoritesList" class="history-list">
+                    {% for item in favorites %}
+                        <button class="history-item" data-history-id="{{ item.history_id }}" type="button">
+                            <span>{{ item.title }}</span>
+                            <small>Saved {{ item.created_at }}</small>
+                        </button>
+                    {% else %}
+                        <p class="muted">No favorites saved yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </aside>
+    </section>
+
+    <section class="results-grid reveal delay-1">
+        <article class="result-card wide">
+            <div class="panel-heading compact">
+                <h2>Explanation</h2>
+                <div class="loader hidden" id="loader" aria-hidden="true"></div>
+            </div>
+            <div id="overviewCard" class="overview-card">Paste code and press Explain Code.</div>
+            <div id="explanationOutput" class="output-stack"></div>
+        </article>
+
+        <article class="result-card">
+            <h2>Concepts Detected</h2>
+            <div id="conceptGrid" class="concept-grid"></div>
+        </article>
+
+        <article class="result-card">
+            <h2>Complexity Meter</h2>
+            <div class="meter">
+                <div id="meterFill"></div>
+            </div>
+            <p id="complexityText" class="strong-muted">Complexity Level: Not analyzed</p>
+        </article>
+
+        <article class="result-card">
+            <h2>Error Detection</h2>
+            <div id="errorList" class="mini-list"></div>
+        </article>
+
+        <article class="result-card">
+            <h2>Expected Output</h2>
+            <pre id="outputPrediction" class="output-box">Not available yet.</pre>
+        </article>
+
+        <article class="result-card">
+            <h2>Next Topics</h2>
+            <ul id="roadmapList" class="mini-list"></ul>
+        </article>
+
+        <article class="result-card wide">
+            <h2>Quiz</h2>
+            <ol id="quizList" class="quiz-list"></ol>
+        </article>
+    </section>
+</main>
+{% endblock %}
