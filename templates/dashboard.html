@@ -41,7 +41,7 @@
             <div class="panel-heading">
                 <div>
                     <p class="eyebrow">Analyze any program</p>
-                    <h1>Code Tutor Dashboard</h1>
+                    <h1>Code Tutor</h1>
                 </div>
                 <div class="status-pill" id="statusPill">Ready</div>
             </div>
@@ -74,10 +74,9 @@
                     </select>
                 </label>
                 <div class="action-row">
-                    <button class="btn btn-primary" id="explainBtn" type="button">Explain Code</button>
+                    <button class="btn btn-primary" id="explainBtn" type="button">⚡ Explain Code</button>
                     <button class="btn btn-secondary" id="clearBtn" type="button">Clear</button>
-                    <button class="btn btn-accent" id="favoriteBtn" type="button" disabled>Save Favorite</button>
-                    <a class="btn btn-ghost disabled" id="downloadBtn" href="#" aria-disabled="true">Download PDF</a>
+                    <a class="btn btn-ghost disabled" id="downloadBtn" href="#" aria-disabled="true">↓ Download PDF</a>
                 </div>
             </div>
         </div>
@@ -117,48 +116,69 @@
         </aside>
     </section>
 
-    <section class="results-grid reveal delay-1">
-        <article class="result-card wide">
+    <!-- Results: vertical full-width cards -->
+    <section id="resultsSection" class="results-stack reveal delay-1">
+
+        <!-- Explanation -->
+        <article class="result-card-full">
             <div class="panel-heading compact">
-                <h2>Explanation</h2>
+                <h2>📄 Code Explanation</h2>
                 <div class="loader hidden" id="loader" aria-hidden="true"></div>
             </div>
             <div id="overviewCard" class="overview-card">Paste code and press Explain Code.</div>
             <div id="explanationOutput" class="output-stack"></div>
         </article>
 
-        <article class="result-card">
-            <h2>Concepts Detected</h2>
-            <div id="conceptGrid" class="concept-grid"></div>
+        <!-- Detected Concepts -->
+        <article class="result-card-full">
+            <h2>🧩 Detected Concepts</h2>
+            <div id="conceptGrid" class="concept-grid-full"></div>
         </article>
 
-        <article class="result-card">
-            <h2>Complexity Meter</h2>
-            <div class="meter">
-                <div id="meterFill"></div>
+        <!-- Complexity Meter -->
+        <article class="result-card-full">
+            <h2>📊 Complexity Analysis</h2>
+            <div class="complexity-wrap">
+                <div class="meter">
+                    <div id="meterFill"></div>
+                </div>
+                <p id="complexityText" class="strong-muted">Complexity Level: Not analyzed</p>
+                <p id="complexityReason" class="muted reason-text"></p>
             </div>
-            <p id="complexityText" class="strong-muted">Complexity Level: Not analyzed</p>
         </article>
 
-        <article class="result-card">
-            <h2>Error Detection</h2>
+        <!-- Error Detection -->
+        <article class="result-card-full">
+            <h2>🔍 Error Detection</h2>
             <div id="errorList" class="mini-list"></div>
         </article>
 
-        <article class="result-card">
-            <h2>Expected Output</h2>
+        <!-- Expected Output -->
+        <article class="result-card-full">
+            <h2>▶ Expected Output</h2>
             <pre id="outputPrediction" class="output-box">Not available yet.</pre>
         </article>
 
-        <article class="result-card">
-            <h2>Next Topics</h2>
-            <ul id="roadmapList" class="mini-list"></ul>
+        <!-- Learning Roadmap -->
+        <article class="result-card-full">
+            <h2>🗺 Learning Roadmap</h2>
+            <ul id="roadmapList" class="roadmap-list"></ul>
         </article>
 
-        <article class="result-card wide">
-            <h2>Quiz</h2>
-            <ol id="quizList" class="quiz-list"></ol>
+        <!-- Quiz -->
+        <article class="result-card-full">
+            <div class="panel-heading compact">
+                <h2>🧠 Quiz</h2>
+                <div class="quiz-score-badge hidden" id="quizScoreBadge"></div>
+            </div>
+            <div id="quizList" class="quiz-container"></div>
         </article>
+
+        <!-- Save Explanation -->
+        <article class="result-card-full save-section">
+            <button class="btn btn-accent btn-large" id="favoriteBtn" type="button" disabled>⭐ Save Explanation</button>
+        </article>
+
     </section>
 </main>
 {% endblock %}
