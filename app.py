@@ -93,7 +93,7 @@ TRANSLATIONS = {
         "next": "Practice the detected concepts with small examples, then combine them in one program.",
     },
     "telugu": {
-        "overview": "{language} code లో {lines} ముఖ్యమైన line(s) ఉన్నాయి. ఇది ప్రధానంగా {concepts} ఉపయోగిస్తుంది.",
+        "overview": "{language} code లో {lines} ముఖ్యమైన line(s) ఉన్నాయి. ఇది ప్రధానంగా {concepts} ఉపയോగిస్తుంది.",
         "overview_empty": "Explanation generate చేయడానికి code enter చేయండి.",
         "line": "లైన్ {line}",
         "variable": "ఈ line {name} లో value store చేస్తుంది. Program దాన్ని తర్వాత మళ్లీ use చేయగలదు.",
@@ -105,7 +105,7 @@ TRANSLATIONS = {
         "print": "ఈ line output ను చూపిస్తుంది, user result చూడగలడు.",
         "return": "ఈ line current function నుండి value ను తిరిగి పంపుతుంది.",
         "input": "ఈ line user నుండి input తీసుకుంటుంది.",
-        "include": "ఈ line library code ను import/include చేసి built-in features ఉపయోగిస్తుంది.",
+        "include": "ఈ line library code ను import/include చేసి built-in features ఉపയോగిస్తుంది.",
         "comment": "ఇది humans కోసం comment. ఇది code లాగా run కాదు.",
         "call": "ఈ line function ను call చేస్తుంది, అంటే ఆ function run అవ్వమని చెబుతుంది.",
         "generic": "ఈ line program logic ను ముందుకు తీసుకెళ్లే step చేస్తుంది.",
@@ -203,7 +203,7 @@ TRANSLATIONS = {
         "generic": "இந்த line program logic முன்னேறும் step செய்கிறது.",
         "intermediate_suffix": " Intermediate level-ல் control flow மற்றும் data state எப்படி மாறுகின்றன கவனியுங்கள்.",
         "advanced_suffix": " இங்கே time/space complexity, edge cases மற்றும் optimization வாய்ப்புகளைப் பரிசீலியுங்கள்.",
-        "no_errors": "Local checker obvious syntax issue எதையும் கண்டுபிடிக்கவில்லை.",
+        "no_errors": "Local checker obvious syntax issue ఎதையும் கண்டுபிடிக்கவில்லை.",
         "output_unknown": "இந்த snippet output-ஐ safely predict செய்ய முடியாது.",
         "next": "Detected concepts-ஐ small examples மூலம் practice செய்து, பின்னர் ஒரு program-ல் combine செய்யுங்கள்.",
     },
@@ -443,21 +443,17 @@ def detect_errors(code, code_language):
 
 def complexity(code, concepts):
     line_count = len(meaningful_lines(code))
-    # Score each concept category
     advanced_concepts = sum(1 for k in ["Recursion", "Classes", "Objects"] if concepts.get(k))
     intermediate_concepts = sum(1 for k in ["Functions", "Arrays"] if concepts.get(k))
     basic_concepts = sum(1 for k in ["Variables", "Input", "Output", "Loops", "Conditions"] if concepts.get(k))
 
-    # Count nesting depth
     nesting = 0
     if code.strip():
         nesting = max((len(line) - len(line.lstrip(" "))) // 4 for _, line in meaningful_lines(code))
 
-    # Count loops and conditions
     loop_count = len(re.findall(r"\b(for|while|do)\b", code))
     func_count = len(re.findall(r"\b(def|function)\s+\w+", code))
 
-    # Weighted score
     score = (
         basic_concepts * 1
         + intermediate_concepts * 2
@@ -469,7 +465,6 @@ def complexity(code, concepts):
     )
     score = min(10, max(1, score))
 
-    # Determine level with stricter thresholds
     if advanced_concepts >= 1 or (intermediate_concepts >= 2 and loop_count >= 2) or score >= 7:
         level = "Advanced"
         reason_parts = []
@@ -513,19 +508,66 @@ def complexity(code, concepts):
 def predict_output(code, code_language, explanation_language):
     prints = []
     variables = {}
+    
+    # Track the evaluation tree blocks
+    execution_stack = [True] 
+    
+    lines = [line.strip().rstrip(";") for _, line in meaningful_lines(code)]
+    
+    for stripped in lines:
+        if not stripped:
+            continue
+            
+        # Detect block closures
+        if stripped == "}" or stripped == "":
+            if len(execution_stack) > 1:
+                execution_stack.pop()
+            continue
 
-    # Handle Python range-based for loops: for i in range(start, stop[, step])
-    for _, line in meaningful_lines(code):
-        stripped = line.strip().rstrip(";")
-
-        # Variable assignment
-        assign = re.match(r"([A-Za-z_]\w*)\s*=\s*([\"']?[\w\s.]+[\"']?|\d+)", stripped)
+        # Look for simple assignments (int x = 10, let y = 20, x = 30)
+        assign = re.match(r"^(?:(?:let|const|var|int|float|double|char|String|bool)\s+)?([A-Za-z_]\w*)\s*=\s*(.*)$", stripped)
         if assign and "==" not in stripped:
-            variables[assign.group(1)] = assign.group(2).strip("\"'")
+            var_name = assign.group(1)
+            var_val_expr = assign.group(2).strip().strip("\"'")
+            if execution_stack[-1]:
+                # Try simple numeric evaluation
+                try:
+                    variables[var_name] = int(var_val_expr)
+                except ValueError:
+                    variables[var_name] = var_val_expr
 
-        # Python for i in range(...)
+        # Handle simple condition blocks (if statements)
+        if_match = re.match(r"^if\s*\((.*)\)\s*\{?", stripped) or re.match(r"^if\s+(.*):", stripped)
+        if if_match:
+            cond_expr = if_match.group(1).strip()
+            # Clean operators
+            cond_expr = cond_expr.replace("&&", " and ").replace("||", " or ")
+            
+            # Substitute local variables into the expression mapping
+            for k, v in variables.items():
+                cond_expr = re.sub(rf"\b{k}\b", str(repr(v) if isinstance(v, str) else v), cond_expr)
+            
+            try:
+                # Sanitize out standard comparisons for simple safe execution mapping
+                allowed_expr = re.sub(r"[A-Za-z_]\w*", "False", cond_expr) if not cond_expr.replace(".","").replace(" ","").isdigit() else cond_expr
+                # Use current variables context mapping safely
+                result = bool(eval(cond_expr, {"__builtins__": None}, variables))
+            except Exception:
+                result = True # Fallback to true if condition expression cannot be resolved parsed
+                
+            execution_stack.append(result and execution_stack[-1])
+            continue
+
+        # Handle Else branches
+        if stripped.startswith("else") or stripped.startswith("elif"):
+            if len(execution_stack) > 1:
+                prev_cond = execution_stack.pop()
+                execution_stack.append((not prev_cond) and (execution_stack[-1] if len(execution_stack) > 0 else True))
+            continue
+
+        # Simulate Python for loop range increments
         range_match = re.match(r"for\s+(\w+)\s+in\s+range\s*\(([^)]+)\)", stripped)
-        if range_match and code_language in {"python", "auto"}:
+        if range_match and execution_stack[-1]:
             var_name = range_match.group(1)
             range_args = [a.strip() for a in range_match.group(2).split(",")]
             try:
@@ -535,41 +577,31 @@ def predict_output(code, code_language, explanation_language):
                     rng = range(int(range_args[0]), int(range_args[1]))
                 else:
                     rng = range(int(range_args[0]), int(range_args[1]), int(range_args[2]))
-                # Look ahead for print inside this loop
-                lines_list = list(meaningful_lines(code))
-                for li, (_, lline) in enumerate(lines_list):
-                    if lline.strip() == line.strip():
-                        # Check next lines for print
-                        for _, nline in lines_list[li + 1:]:
-                            nstripped = nline.strip()
-                            if not nstripped.startswith(" ") and not nstripped.startswith("\t") and nstripped:
-                                break
-                            pm = re.search(r"print\s*\(\s*(\w+)\s*\)", nstripped)
-                            if pm and pm.group(1) == var_name:
-                                for v in rng:
-                                    prints.append(str(v))
-                                break
+                
+                # Check for an immediately following print block inside the execution scope
+                for next_line in lines[lines.index(stripped)+1:]:
+                    pm = re.search(r"print\s*\(\s*(\w+)\s*\)", next_line)
+                    if pm and pm.group(1) == var_name:
+                        for v in rng:
+                            prints.append(str(v))
                         break
-            except (ValueError, OverflowError):
+            except (ValueError, IndexError):
                 pass
 
-        # Simple print statements
-        print_match = re.search(
-            r"(?:print|printf|console\.log|System\.out\.println)\s*\((.*?)\)|cout\s*<<\s*(.*)",
-            stripped,
-        )
-        if print_match:
-            value = (print_match.group(1) or print_match.group(2) or "").strip()
-            # Skip if already handled by loop detection
-            if re.search(r"\brange\b", code) and re.search(r"\bfor\b", code) and value in variables:
-                pass  # loop handles it
-            else:
-                value = value.replace("\\n", "").strip("\"'")
-                # f-string / format handling: just resolve simple var refs
-                resolved = re.sub(r"\{(\w+)\}", lambda m: str(variables.get(m.group(1), m.group(1))), value)
-                resolved = str(variables.get(resolved, resolved))
-                if resolved and not any(c in resolved for c in ["(", "+", "%"]):
-                    prints.append(resolved)
+        # Handle print extractions conditionally inside current context stack frame
+        if execution_stack[-1]:
+            print_match = re.search(
+                r"(?:print|printf|console\.log|System\.out\.println)\s*\((.*?)\)|cout\s*<<\s*(.*)",
+                stripped,
+            )
+            if print_match:
+                value = (print_match.group(1) or print_match.group(2) or "").strip()
+                if not ("range" in code and "for" in code and value in variables):
+                    value = value.replace("\\n", "").strip("\"'")
+                    resolved = re.sub(r"\{(\w+)\}", lambda m: str(variables.get(m.group(1), m.group(1))), value)
+                    resolved = str(variables.get(resolved, resolved))
+                    if resolved and not any(c in resolved for c in ["(", "+", "%"]):
+                        prints.append(resolved)
 
     if prints:
         return "\n".join(prints)
@@ -603,7 +635,6 @@ def roadmap(concepts):
         next_topics.append("Introduction to Lists & Arrays")
     if not next_topics:
         next_topics = ["Introduction to Functions", "Arrays & Lists", "OOP Basics", "Data Structures"]
-    # Deduplicate and limit
     seen = set()
     result = []
     for t in next_topics:
@@ -657,7 +688,6 @@ def quiz_questions(concepts, output):
             "options": ["A type of loop", "A blueprint for creating objects", "A conditional statement", "A built-in function"],
             "answer": 1,
         })
-    # Always add an output question
     questions.append({
         "question": "What is the expected output of this program?",
         "options": [output[:40] if output and "cannot" not in output else "Varies", "No output", "An error", "Infinite loop"],
@@ -735,7 +765,6 @@ def update_progress(user_id, result):
 
 def store_history(user_id, code, code_language, explanation_language, skill_level, result):
     first_line = code.strip().splitlines()[0][:50] if code.strip() else "Untitled"
-    lang_label = CODE_LANGUAGES.get(code_language, code_language.title())
     title = f"{first_line}"
     with get_db_connection() as conn:
         cursor = conn.execute(
@@ -785,41 +814,74 @@ def pdf_escape(text):
 
 
 def make_simple_pdf(title, lines):
-    y = 760
-    objects = [
-        "<< /Type /Catalog /Pages 2 0 R >>",
-        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    ]
-    commands = ["BT", "/F1 18 Tf", f"50 {y} Td", f"({pdf_escape(title)}) Tj"]
-    y -= 30
+    """Generates a structurally valid PDF document containing explicit text rendering objects."""
+    catalog_obj = "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj"
+    pages_obj = "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj"
+    font_obj = "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj"
+    
+    y = 740
+    commands = ["BT", "/F1 16 Tf", f"50 {y} Td", f"({pdf_escape(title)}) Tj", "0 -24 Td"]
+    y -= 24
     commands.append("/F1 10 Tf")
+    
     for raw_line in lines:
-        for chunk in re.findall(".{1,92}", str(raw_line)) or [""]:
-            commands.append(f"50 {y} Td ({pdf_escape(chunk)}) Tj")
-            commands.append(f"-50 -14 Td")
+        if not raw_line.strip():
+            commands.append("0 -14 Td")
             y -= 14
-            if y < 40:
+            continue
+        # Split chunks safely over single lines
+        for chunk in re.findall(".{1,85}", str(raw_line)) or [""]:
+            commands.append(f"({pdf_escape(chunk)}) Tj")
+            commands.append("0 -14 Td")
+            y -= 14
+            if y < 50:
                 break
-        if y < 40:
+        if y < 50:
             break
+            
     commands.append("ET")
-    stream = "\n".join(commands)
-    objects.append(f"<< /Length {len(stream.encode('latin-1', 'ignore'))} >>\nstream\n{stream}\nendstream")
-    pdf = ["%PDF-1.4"]
+    stream_content = "\n".join(commands)
+    
+    content_obj = f"5 0 obj\n<< /Length {len(stream_content.encode('utf-8'))} >>\nstream\n{stream_content}\nendstream\nendobj"
+    page_obj = "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj"
+    
+    pdf_parts = [
+        "%PDF-1.4",
+        catalog_obj,
+        pages_obj,
+        page_obj,
+        font_obj,
+        content_obj
+    ]
+    
+    # Calculate cross-reference table byte sizes
+    body = "\n".join(pdf_parts) + "\n"
     offsets = []
-    for i, obj in enumerate(objects, start=1):
-        offsets.append(sum(len(part.encode("latin-1", "ignore")) + 1 for part in pdf))
-        pdf.append(f"{i} 0 obj\n{obj}\nendobj")
-    xref_pos = sum(len(part.encode("latin-1", "ignore")) + 1 for part in pdf)
-    pdf.append("xref")
-    pdf.append(f"0 {len(objects) + 1}")
-    pdf.append("0000000000 65535 f ")
-    pdf.extend(f"{offset:010d} 00000 n " for offset in offsets)
-    pdf.append(f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>")
-    pdf.append(f"startxref\n{xref_pos}\n%%EOF")
-    return "\n".join(pdf).encode("latin-1", "ignore")
+    current_offset = 0
+    lines_list = body.splitlines()
+    
+    pdf_out = bytearray()
+    for line in lines_list:
+        offsets.append(len(pdf_out))
+        pdf_out.extend((line + "\n").encode("utf-8"))
+        
+    xref_pos = len(pdf_out)
+    
+    xref_table = [
+        "xref",
+        f"0 {len(pdf_parts)}",
+        "0000000000 65535 f "
+    ]
+    
+    # Base configuration elements mappings
+    for idx in range(1, len(pdf_parts)):
+        xref_table.append(f"{offsets[idx]:010d} 00000 n ")
+        
+    xref_table.append(f"trailer\n<< /Size {len(pdf_parts)} /Root 1 0 R >>")
+    xref_table.append(f"startxref\n{xref_pos}\n%%EOF")
+    
+    pdf_out.extend(("\n".join(xref_table)).encode("utf-8"))
+    return bytes(pdf_out)
 
 
 @app.route("/")
@@ -1032,21 +1094,54 @@ def download_pdf(history_id):
     if not row:
         flash("Analysis not found.", "danger")
         return redirect(url_for("dashboard"))
+        
     result = json.loads(row["result_json"])
-    lines = [f"Overview: {result['overview']}", "", "Line-by-line explanation:"]
-    lines.extend(f"{item['title']}: {item['explanation']}" for item in result["items"])
-    lines.append("")
-    lines.append(f"Complexity Level: {result['complexity']['level']} ({result['complexity']['score']}/10)")
-    lines.append(f"Expected Output: {result['expected_output']}")
-    lines.append("")
-    lines.append("Quiz:")
+    
+    # Structure breakdown containing all data sets requested
+    lines = [
+        f"Programming Language: {row['code_language'].upper()}",
+        f"Skill Level: {row['skill_level'].upper()}",
+        "",
+        "--- SUBMITTED CODE ---",
+    ]
+    lines.extend(row["code"].splitlines())
+    lines.extend([
+        "",
+        "--- OVERVIEW ---",
+        result['overview'],
+        "",
+        "--- LINE-BY-LINE EXPLANATION ---"
+    ])
+    lines.extend(f"{item['title']}: [{item['code']}] -> {item['explanation']}" for item in result["items"])
+    lines.extend([
+        "",
+        "--- COMPLEXITY ANALYSIS ---",
+        f"Complexity Level: {result['complexity']['level']} ({result['complexity']['score']}/10)",
+        f"Reasoning: {result['complexity']['reason']}",
+        "",
+        "--- ERROR DETECTION ---"
+    ])
+    lines.extend(f"Line {err['line']}: {err['description']} (Fix: {err['fix']})" for err in result["errors"])
+    lines.extend([
+        "",
+        "--- EXPECTED OUTPUT ---",
+        result['expected_output'],
+        "",
+        "--- LEARNING ROADMAP ---"
+    ])
+    lines.extend(f"- {topic}" for topic in result["roadmap"])
+    lines.extend([
+        "",
+        "--- PRACTICE QUIZ ---"
+    ])
     for q in result["quiz"]:
         if isinstance(q, dict):
-            lines.append(f"- {q['question']}")
+            lines.append(f"Question: {q['question']}")
             for i, opt in enumerate(q.get('options', [])):
                 lines.append(f"  {'ABCD'[i]}. {opt}")
         else:
             lines.append(f"- {q}")
+            
     response = make_response(make_simple_pdf("AI Code Tutor Explanation", lines))
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = f"attachment; filename=ai-code-tutor-{history_id}.pdf"
