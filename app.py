@@ -43,6 +43,7 @@ SETUP_LANGUAGES = {
 SKILL_LEVELS = {
     "beginner": "Beginner",
     "intermediate": "Intermediate",
+    "advanced": "Advanced",
 }
 
 CODE_LANGUAGES = {
@@ -56,6 +57,8 @@ CODE_LANGUAGES = {
 
 CONCEPTS = [
     "Variables",
+    "Input",
+    "Output",
     "Loops",
     "Conditions",
     "Functions",
@@ -84,6 +87,7 @@ TRANSLATIONS = {
         "call": "This line calls a function, which means it asks that function to run.",
         "generic": "This line performs a program step that moves the logic forward.",
         "intermediate_suffix": " At an intermediate level, notice how control flow and data state change here.",
+        "advanced_suffix": " Consider time/space complexity, edge cases, and opportunities for optimization here.",
         "no_errors": "No obvious syntax issues were detected by the local checker.",
         "output_unknown": "Output cannot be predicted safely from this snippet.",
         "next": "Practice the detected concepts with small examples, then combine them in one program.",
@@ -106,6 +110,7 @@ TRANSLATIONS = {
         "call": "ఈ line function ను call చేస్తుంది, అంటే ఆ function run అవ్వమని చెబుతుంది.",
         "generic": "ఈ line program logic ను ముందుకు తీసుకెళ్లే step చేస్తుంది.",
         "intermediate_suffix": " Intermediate level లో control flow మరియు data state ఎలా మారుతున్నాయో గమనించండి.",
+        "advanced_suffix": " ఇక్కడ time/space complexity, edge cases మరియు optimization అవకాశాలు పరిశీలించండి.",
         "no_errors": "Local checker కి పెద్ద syntax mistakes కనిపించలేదు.",
         "output_unknown": "ఈ snippet output ను safe గా predict చేయలేము.",
         "next": "Detected concepts ను small examples తో practice చేసి, తర్వాత ఒక program లో combine చేయండి.",
@@ -128,6 +133,7 @@ TRANSLATIONS = {
         "call": "यह line function call करती है, यानी function को run करने के लिए कहती है।",
         "generic": "यह line program logic को आगे बढ़ाने वाला step करती है।",
         "intermediate_suffix": " Intermediate level पर control flow और data state कैसे बदलते हैं, यह देखें।",
+        "advanced_suffix": " यहाँ time/space complexity, edge cases और optimization के अवसरों पर विचार करें।",
         "no_errors": "Local checker को कोई obvious syntax issue नहीं मिला।",
         "output_unknown": "इस snippet का output safely predict नहीं किया जा सकता।",
         "next": "Detected concepts को small examples से practice करें, फिर उन्हें एक program में combine करें।",
@@ -150,6 +156,7 @@ TRANSLATIONS = {
         "call": "ही line function call करते, म्हणजे function run करायला सांगते.",
         "generic": "ही line program logic पुढे नेणारा step करते.",
         "intermediate_suffix": " Intermediate level वर control flow आणि data state कसे बदलतात ते पाहा.",
+        "advanced_suffix": " येथे time/space complexity, edge cases आणि optimization च्या संधींचा विचार करा.",
         "no_errors": "Local checker ला obvious syntax issue सापडला नाही.",
         "output_unknown": "या snippet चा output safely predict करता येत नाही.",
         "next": "Detected concepts small examples ने practice करा, मग एका program मध्ये combine करा.",
@@ -172,6 +179,7 @@ TRANSLATIONS = {
         "call": "ಈ line function call ಮಾಡುತ್ತದೆ, ಅಂದರೆ function run ಆಗಲಿ ಎಂದು ಹೇಳುತ್ತದೆ.",
         "generic": "ಈ line program logic ಮುಂದಕ್ಕೆ ಸಾಗುವ step ಮಾಡುತ್ತದೆ.",
         "intermediate_suffix": " Intermediate level ನಲ್ಲಿ control flow ಮತ್ತು data state ಹೇಗೆ ಬದಲಾಗುತ್ತವೆ ನೋಡಿ.",
+        "advanced_suffix": " ಇಲ್ಲಿ time/space complexity, edge cases ಮತ್ತು optimization ಅವಕಾಶಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
         "no_errors": "Local checker ಗೆ obvious syntax issue ಕಂಡುಬಂದಿಲ್ಲ.",
         "output_unknown": "ಈ snippet output ಅನ್ನು safely predict ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ.",
         "next": "Detected concepts ಅನ್ನು small examples ಮೂಲಕ practice ಮಾಡಿ, ನಂತರ ಒಂದು program ನಲ್ಲಿ combine ಮಾಡಿ.",
@@ -194,6 +202,7 @@ TRANSLATIONS = {
         "call": "இந்த line function call செய்கிறது, அதாவது function run ஆகச் சொல்கிறது.",
         "generic": "இந்த line program logic முன்னேறும் step செய்கிறது.",
         "intermediate_suffix": " Intermediate level-ல் control flow மற்றும் data state எப்படி மாறுகின்றன கவனியுங்கள்.",
+        "advanced_suffix": " இங்கே time/space complexity, edge cases மற்றும் optimization வாய்ப்புகளைப் பரிசீலியுங்கள்.",
         "no_errors": "Local checker obvious syntax issue எதையும் கண்டுபிடிக்கவில்லை.",
         "output_unknown": "இந்த snippet output-ஐ safely predict செய்ய முடியாது.",
         "next": "Detected concepts-ஐ small examples மூலம் practice செய்து, பின்னர் ஒரு program-ல் combine செய்யுங்கள்.",
@@ -317,6 +326,8 @@ def meaningful_lines(code):
 def concept_map(code):
     checks = {
         "Variables": bool(re.search(r"(^|\s)(let|const|var|int|float|double|char|String|bool)\s+\w+|\w+\s*=", code)),
+        "Input": bool(re.search(r"\b(input|scanf|cin\s*>>|Scanner|readline|gets|fgets)\b", code)),
+        "Output": bool(re.search(r"\b(print|printf|console\.log|System\.out\.println|cout\s*<<)\b", code)),
         "Loops": bool(re.search(r"\b(for|while|do)\b", code)),
         "Conditions": bool(re.search(r"\b(if|else|elif|switch|case)\b", code)),
         "Functions": bool(re.search(r"\b(def|function)\s+\w+|\w+\s+\w+\s*\([^)]*\)\s*\{", code)),
@@ -371,6 +382,8 @@ def explain_lines(code, level, explanation_language, code_language):
         text = phrases[kind].format(**details)
         if level == "intermediate" and kind not in {"comment", "generic"}:
             text += phrases["intermediate_suffix"]
+        elif level == "advanced" and kind not in {"comment", "generic"}:
+            text += phrases["advanced_suffix"]
         items.append(
             {
                 "line": line_number,
@@ -430,34 +443,134 @@ def detect_errors(code, code_language):
 
 def complexity(code, concepts):
     line_count = len(meaningful_lines(code))
-    concept_count = sum(1 for enabled in concepts.values() if enabled)
-    nesting = max((len(line) - len(line.lstrip(" "))) // 4 for _, line in meaningful_lines(code)) if code.strip() else 0
-    score = min(10, max(1, concept_count + line_count // 6 + nesting))
-    if score <= 3:
-        level = "Beginner"
-    elif score <= 6:
-        level = "Intermediate"
-    else:
+    # Score each concept category
+    advanced_concepts = sum(1 for k in ["Recursion", "Classes", "Objects"] if concepts.get(k))
+    intermediate_concepts = sum(1 for k in ["Functions", "Arrays"] if concepts.get(k))
+    basic_concepts = sum(1 for k in ["Variables", "Input", "Output", "Loops", "Conditions"] if concepts.get(k))
+
+    # Count nesting depth
+    nesting = 0
+    if code.strip():
+        nesting = max((len(line) - len(line.lstrip(" "))) // 4 for _, line in meaningful_lines(code))
+
+    # Count loops and conditions
+    loop_count = len(re.findall(r"\b(for|while|do)\b", code))
+    func_count = len(re.findall(r"\b(def|function)\s+\w+", code))
+
+    # Weighted score
+    score = (
+        basic_concepts * 1
+        + intermediate_concepts * 2
+        + advanced_concepts * 3
+        + (1 if loop_count > 1 else 0)
+        + (1 if nesting >= 2 else 0)
+        + (1 if func_count > 1 else 0)
+        + line_count // 10
+    )
+    score = min(10, max(1, score))
+
+    # Determine level with stricter thresholds
+    if advanced_concepts >= 1 or (intermediate_concepts >= 2 and loop_count >= 2) or score >= 7:
         level = "Advanced"
-    return {"level": level, "score": score}
+        reason_parts = []
+        if concepts.get("Recursion"):
+            reason_parts.append("recursion")
+        if concepts.get("Classes"):
+            reason_parts.append("classes/OOP")
+        if func_count > 1:
+            reason_parts.append("multiple functions")
+        if nesting >= 2:
+            reason_parts.append("deep nesting")
+        reason = "Uses " + (", ".join(reason_parts) if reason_parts else "complex constructs") + "."
+    elif intermediate_concepts >= 1 or loop_count > 1 or func_count >= 1 or score >= 4:
+        level = "Intermediate"
+        reason_parts = []
+        if concepts.get("Functions"):
+            reason_parts.append("functions")
+        if concepts.get("Arrays"):
+            reason_parts.append("arrays/lists")
+        if loop_count > 1:
+            reason_parts.append("multiple loops")
+        if concepts.get("Conditions"):
+            reason_parts.append("conditions")
+        reason = "Uses " + (", ".join(reason_parts) if reason_parts else "moderate constructs") + "."
+    else:
+        level = "Beginner"
+        reason_parts = []
+        if concepts.get("Variables"):
+            reason_parts.append("variables")
+        if concepts.get("Loops"):
+            reason_parts.append("one loop")
+        if concepts.get("Conditions"):
+            reason_parts.append("one condition")
+        if concepts.get("Input"):
+            reason_parts.append("input/output")
+        reason = "Uses " + (", ".join(reason_parts) if reason_parts else "basic steps only") + "."
+
+    return {"level": level, "score": score, "reason": reason}
 
 
 def predict_output(code, code_language, explanation_language):
     prints = []
     variables = {}
+
+    # Handle Python range-based for loops: for i in range(start, stop[, step])
     for _, line in meaningful_lines(code):
         stripped = line.strip().rstrip(";")
-        assign = re.match(r"([A-Za-z_]\w*)\s*=\s*([\"']?[\w\s]+[\"']?|\d+)", stripped)
-        if assign:
+
+        # Variable assignment
+        assign = re.match(r"([A-Za-z_]\w*)\s*=\s*([\"']?[\w\s.]+[\"']?|\d+)", stripped)
+        if assign and "==" not in stripped:
             variables[assign.group(1)] = assign.group(2).strip("\"'")
+
+        # Python for i in range(...)
+        range_match = re.match(r"for\s+(\w+)\s+in\s+range\s*\(([^)]+)\)", stripped)
+        if range_match and code_language in {"python", "auto"}:
+            var_name = range_match.group(1)
+            range_args = [a.strip() for a in range_match.group(2).split(",")]
+            try:
+                if len(range_args) == 1:
+                    rng = range(int(range_args[0]))
+                elif len(range_args) == 2:
+                    rng = range(int(range_args[0]), int(range_args[1]))
+                else:
+                    rng = range(int(range_args[0]), int(range_args[1]), int(range_args[2]))
+                # Look ahead for print inside this loop
+                lines_list = list(meaningful_lines(code))
+                for li, (_, lline) in enumerate(lines_list):
+                    if lline.strip() == line.strip():
+                        # Check next lines for print
+                        for _, nline in lines_list[li + 1:]:
+                            nstripped = nline.strip()
+                            if not nstripped.startswith(" ") and not nstripped.startswith("\t") and nstripped:
+                                break
+                            pm = re.search(r"print\s*\(\s*(\w+)\s*\)", nstripped)
+                            if pm and pm.group(1) == var_name:
+                                for v in rng:
+                                    prints.append(str(v))
+                                break
+                        break
+            except (ValueError, OverflowError):
+                pass
+
+        # Simple print statements
         print_match = re.search(
             r"(?:print|printf|console\.log|System\.out\.println)\s*\((.*?)\)|cout\s*<<\s*(.*)",
             stripped,
         )
         if print_match:
             value = (print_match.group(1) or print_match.group(2) or "").strip()
-            value = value.replace("\\n", "").strip("\"'")
-            prints.append(str(variables.get(value, value)))
+            # Skip if already handled by loop detection
+            if re.search(r"\brange\b", code) and re.search(r"\bfor\b", code) and value in variables:
+                pass  # loop handles it
+            else:
+                value = value.replace("\\n", "").strip("\"'")
+                # f-string / format handling: just resolve simple var refs
+                resolved = re.sub(r"\{(\w+)\}", lambda m: str(variables.get(m.group(1), m.group(1))), value)
+                resolved = str(variables.get(resolved, resolved))
+                if resolved and not any(c in resolved for c in ["(", "+", "%"]):
+                    prints.append(resolved)
+
     if prints:
         return "\n".join(prints)
     return TRANSLATIONS[explanation_language]["output_unknown"]
@@ -465,32 +578,91 @@ def predict_output(code, code_language, explanation_language):
 
 def roadmap(concepts):
     next_topics = []
-    if not concepts["Functions"]:
-        next_topics.append("Functions")
-    if not concepts["Arrays"]:
-        next_topics.append("Arrays")
-    if concepts["Classes"] or concepts["Objects"]:
-        next_topics.append("OOP")
-    if concepts["Loops"] and concepts["Arrays"]:
-        next_topics.append("Data Structures")
-    if concepts["Recursion"]:
-        next_topics.append("Recursion Trees")
+    if concepts.get("Loops") and not concepts.get("Arrays"):
+        next_topics.append("Learn Array Traversal with Loops")
+    if concepts.get("Loops"):
+        next_topics.append("Practice Nested Loops")
+        next_topics.append("Explore While Loops")
+    if concepts.get("Functions"):
+        next_topics.append("Learn Function Parameters & Return Values")
+        next_topics.append("Practice Recursive Functions")
+    if concepts.get("Arrays"):
+        next_topics.append("Learn Array Sorting Algorithms")
+        next_topics.append("Practice Array Traversal & Searching")
+    if concepts.get("Conditions") and not concepts.get("Functions"):
+        next_topics.append("Learn Functions to Simplify Conditions")
+    if concepts.get("Classes") or concepts.get("Objects"):
+        next_topics.append("Study OOP Principles: Inheritance & Polymorphism")
+        next_topics.append("Learn Encapsulation & Abstraction")
+    if concepts.get("Recursion"):
+        next_topics.append("Study Recursion Trees & Memoization")
+        next_topics.append("Learn Dynamic Programming")
+    if not concepts.get("Functions"):
+        next_topics.append("Introduction to Functions")
+    if not concepts.get("Arrays"):
+        next_topics.append("Introduction to Lists & Arrays")
     if not next_topics:
-        next_topics = ["Functions", "Arrays", "OOP", "Data Structures"]
-    return next_topics[:5]
+        next_topics = ["Introduction to Functions", "Arrays & Lists", "OOP Basics", "Data Structures"]
+    # Deduplicate and limit
+    seen = set()
+    result = []
+    for t in next_topics:
+        if t not in seen:
+            seen.add(t)
+            result.append(t)
+    return result[:6]
 
 
 def quiz_questions(concepts, output):
     questions = []
-    if concepts["Loops"]:
-        questions.append("What does the loop repeat, and when does it stop?")
-    if concepts["Variables"]:
-        questions.append("Which variable stores the main value in this program?")
-    if concepts["Conditions"]:
-        questions.append("Which condition decides whether a block should run?")
-    if concepts["Functions"]:
-        questions.append("What input does the function need, and what does it return?")
-    questions.append("What is the expected output of this code?")
+    if concepts.get("Loops"):
+        questions.append({
+            "question": "What is the primary purpose of a loop in a program?",
+            "options": ["Store data in memory", "Repeat a block of instructions", "Define a new function", "Delete a variable"],
+            "answer": 1,
+        })
+    if concepts.get("Variables"):
+        questions.append({
+            "question": "What does a variable do in a program?",
+            "options": ["Runs the program faster", "Stores a value for later use", "Creates a loop", "Ends the program"],
+            "answer": 1,
+        })
+    if concepts.get("Conditions"):
+        questions.append({
+            "question": "When does the code inside an 'if' block run?",
+            "options": ["Always", "Never", "Only when the condition is true", "Only when the condition is false"],
+            "answer": 2,
+        })
+    if concepts.get("Functions"):
+        questions.append({
+            "question": "What is the main benefit of using functions?",
+            "options": ["They make code run slower", "They group reusable steps to avoid repetition", "They delete unused variables", "They replace loops"],
+            "answer": 1,
+        })
+    if concepts.get("Arrays"):
+        questions.append({
+            "question": "What does an array or list store?",
+            "options": ["Only one value", "Multiple values in a single structure", "Only text values", "Only numbers"],
+            "answer": 1,
+        })
+    if concepts.get("Recursion"):
+        questions.append({
+            "question": "What is recursion?",
+            "options": ["A loop that never ends", "A function that calls itself", "An array inside a class", "A type of variable"],
+            "answer": 1,
+        })
+    if concepts.get("Classes"):
+        questions.append({
+            "question": "What is a class in object-oriented programming?",
+            "options": ["A type of loop", "A blueprint for creating objects", "A conditional statement", "A built-in function"],
+            "answer": 1,
+        })
+    # Always add an output question
+    questions.append({
+        "question": "What is the expected output of this program?",
+        "options": [output[:40] if output and "cannot" not in output else "Varies", "No output", "An error", "Infinite loop"],
+        "answer": 0 if output and "cannot" not in output else 2,
+    })
     return questions[:5]
 
 
@@ -562,7 +734,9 @@ def update_progress(user_id, result):
 
 
 def store_history(user_id, code, code_language, explanation_language, skill_level, result):
-    title = code.strip().splitlines()[0][:70] if code.strip() else "Untitled analysis"
+    first_line = code.strip().splitlines()[0][:50] if code.strip() else "Untitled"
+    lang_label = CODE_LANGUAGES.get(code_language, code_language.title())
+    title = f"{first_line}"
     with get_db_connection() as conn:
         cursor = conn.execute(
             """
@@ -866,7 +1040,13 @@ def download_pdf(history_id):
     lines.append(f"Expected Output: {result['expected_output']}")
     lines.append("")
     lines.append("Quiz:")
-    lines.extend(f"- {question}" for question in result["quiz"])
+    for q in result["quiz"]:
+        if isinstance(q, dict):
+            lines.append(f"- {q['question']}")
+            for i, opt in enumerate(q.get('options', [])):
+                lines.append(f"  {'ABCD'[i]}. {opt}")
+        else:
+            lines.append(f"- {q}")
     response = make_response(make_simple_pdf("AI Code Tutor Explanation", lines))
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = f"attachment; filename=ai-code-tutor-{history_id}.pdf"
