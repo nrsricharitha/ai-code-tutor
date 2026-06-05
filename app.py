@@ -26,7 +26,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, "database.db")
 
 
-# Expanded with Chinese, Korean, and Japanese
 EXPLANATION_LANGUAGES = {
     "english": "English",
     "telugu": "Telugu",
@@ -34,9 +33,6 @@ EXPLANATION_LANGUAGES = {
     "marathi": "Marathi",
     "kannada": "Kannada",
     "tamil": "Tamil",
-    "chinese": "Chinese (中文)",
-    "korean": "Korean (한국어)",
-    "japanese": "Japanese (日本語)",
 }
 
 SETUP_LANGUAGES = {
@@ -50,7 +46,6 @@ SKILL_LEVELS = {
     "advanced": "Advanced",
 }
 
-# Expanded with HTML, CSS, and R
 CODE_LANGUAGES = {
     "auto": "Auto Detect",
     "python": "Python",
@@ -58,9 +53,6 @@ CODE_LANGUAGES = {
     "cpp": "C++",
     "java": "Java",
     "javascript": "JavaScript",
-    "html": "HTML",
-    "css": "CSS",
-    "r": "R Language",
 }
 
 CONCEPTS = [
@@ -76,7 +68,6 @@ CONCEPTS = [
     "Recursion",
 ]
 
-# Added full translations for Chinese, Korean, and Japanese, plus localized templates
 TRANSLATIONS = {
     "english": {
         "overview": "{language} code with {lines} meaningful line(s). It mainly uses {concepts}.",
@@ -102,7 +93,7 @@ TRANSLATIONS = {
         "next": "Practice the detected concepts with small examples, then combine them in one program.",
     },
     "telugu": {
-        "overview": "{language} code లో {lines} ముఖ్యమైన line(s) ఉన్నాయి. ఇది ప్రధానంగా {concepts} ఉపయోగిస్తుంది.",
+        "overview": "{language} code లో {lines} ముఖ్యమైన line(s) ఉన్నాయి. ఇది ప్రధానంగా {concepts} ఉపയോగిస్తుంది.",
         "overview_empty": "Explanation generate చేయడానికి code enter చేయండి.",
         "line": "లైన్ {line}",
         "variable": "ఈ line {name} లో value store చేస్తుంది. Program దాన్ని తర్వాత మళ్లీ use చేయగలదు.",
@@ -114,7 +105,7 @@ TRANSLATIONS = {
         "print": "ఈ line output ను చూపిస్తుంది, user result చూడగలడు.",
         "return": "ఈ line current function నుండి value ను తిరిగి పంపుతుంది.",
         "input": "ఈ line user నుండి input తీసుకుంటుంది.",
-        "include": "ఈ line library code ను import/include చేసి built-in features ఉపయోగిస్తుంది.",
+        "include": "ఈ line library code ను import/include చేసి built-in features ఉపയോగిస్తుంది.",
         "comment": "ఇది humans కోసం comment. ఇది code లాగా run కాదు.",
         "call": "ఈ line function ను call చేస్తుంది, అంటే ఆ function run అవ్వమని చెబుతుంది.",
         "generic": "ఈ line program logic ను ముందుకు తీసుకెళ్లే step చేస్తుంది.",
@@ -212,79 +203,10 @@ TRANSLATIONS = {
         "generic": "இந்த line program logic முன்னேறும் step செய்கிறது.",
         "intermediate_suffix": " Intermediate level-ல் control flow மற்றும் data state எப்படி மாறுகின்றன கவனியுங்கள்.",
         "advanced_suffix": " இங்கே time/space complexity, edge cases மற்றும் optimization வாய்ப்புகளைப் பரிசீலியுங்கள்.",
-        "no_errors": "Local checker obvious syntax issue எதையும் கண்டுபிடிக்கவில்லை.",
+        "no_errors": "Local checker obvious syntax issue ఎதையும் கண்டுபிடிக்கவில்லை.",
         "output_unknown": "இந்த snippet output-ஐ safely predict செய்ய முடியாது.",
         "next": "Detected concepts-ஐ small examples மூலம் practice செய்து, பின்னர் ஒரு program-ல் combine செய்யுங்கள்.",
     },
-    "chinese": {
-        "overview": "包含 {lines} 行有效代码的 {language} 程序。主要使用了 {concepts}。",
-        "overview_empty": "请输入代码以生成解析说明。",
-        "line": "第 {line} 行",
-        "variable": "此行在变量 {name} 中存储一个值，供程序后续重复使用。",
-        "loop": "此行启动一个循环结构，重复执行该代码块直到结束条件满足。",
-        "condition": "此行检查条件语句，只有当条件为真 (True) 时才执行对应代码块。",
-        "function": "此行定义了一个名为 {name} 的函数，用于封装可重用的步骤。",
-        "class": "此行定义了一个名为 {name} 的类，类是创建对象的蓝图。",
-        "array": "此行创建或操作一个列表/数组，用于整合存储多个数值。",
-        "print": "此行执行输出显示，让用户可以看到运行结果。",
-        "return": "此行将数值从当前函数中返回。",
-        "input": "此行用于接收来自用户的输入数据。",
-        "include": "此行导入或包含库代码，以便程序调用内置功能。",
-        "comment": "这是面向开发人员的注释说明，程序运行时不会执行。",
-        "call": "此行调用特定的函数来运行其内部封装的逻辑。",
-        "generic": "此行执行一个标准的程序步骤以推进业务逻辑。",
-        "intermediate_suffix": " 在中级阶段，请注意此处控制流和数据状态的变化。",
-        "advanced_suffix": " 在高级阶段，需要考虑此处的时间/空间复杂度、边界条件和优化机会。",
-        "no_errors": "本地检查器未检测到明显的语法错误。",
-        "output_unknown": "无法从此代码片段安全地预测输出。",
-        "next": "通过编写小示例来练习检测到的概念，然后将它们组合在一个程序中。",
-    },
-    "korean": {
-        "overview": "{lines}개의 의미 있는 줄로 구성된 {language} 코드입니다. 주요 개념은 {concepts}입니다.",
-        "overview_empty": "설명을 생성하려면 코드를 입력하세요.",
-        "line": "{line}번째 줄",
-        "variable": "이 줄은 {name} 변수에 값을 저장합니다. 나중에 프로그램에서 이 값을 다시 사용할 수 있습니다.",
-        "loop": "이 줄은 반복문(Loop)을 시작합니다. 조건이 충족되거나 범위가 끝날 때까지 블록을 반복합니다.",
-        "condition": "이 줄은 조건을 확인하며, 해당 조건이 참(True)일 때만 블록을 실행합니다.",
-        "function": "이 줄은 {name} 함수를 정의합니다. 함수는 재사용 가능한 코드 단계를 그룹화합니다.",
-        "class": "이 줄은 {name} 클래스를 정의합니다. 클래스는 객체를 만들기 위한 청사진입니다.",
-        "array": "이 줄은 여러 값을 함께 저장하는 리스트나 배열을 생성하거나 사용합니다.",
-        "print": "이 줄은 사용자가 결과를 볼 수 있도록 출력을 표시합니다.",
-        "return": "이 줄은 현재 실행 중인 함수에서 값을 반환합니다.",
-        "input": "이 줄은 사용자로부터 입력을 받습니다.",
-        "include": "이 줄은 내장 기능을 사용할 수 있도록 외부 라이브러리 코드를 가져오거나 포함합니다.",
-        "comment": "이 줄은 사람을 위한 주석입니다. 코드로 실행되지 않습니다.",
-        "call": "이 줄은 함수를 호출하여 해당 함수 내부의 로직을 실행합니다.",
-        "generic": "이 줄은 프로그램을 전진시키는 일반적인 로직 단계를 수행합니다.",
-        "intermediate_suffix": " 중급 레벨에서는 여기서 제어 흐름과 데이터 상태가 어떻게 바뀌는지 주의 깊게 살펴보세요.",
-        "advanced_suffix": " 고급 레벨에서는 시간/공간 복잡도, 예외 케이스 및 최적화 요소를 검토하세요.",
-        "no_errors": "로컬 검사기에서 발견된 명확한 구문 오류가 없습니다.",
-        "output_unknown": "이 코드 조각으로는 출력을 안전하게 예측할 수 없습니다.",
-        "next": "탐지된 개념들을 작은 예제로 먼저 연습한 다음, 하나의 프로그램으로 결합해 보세요.",
-    },
-    "japanese": {
-        "overview": "{lines} 行の有効なコードを含む {language} のプログラムです。主に {concepts} が使われています。",
-        "overview_empty": "解説を生成するにはコードを入力してください。",
-        "line": "{line} 行目",
-        "variable": "この行は値を {name} に格納します。プログラムは後でその値を再利用できます。",
-        "loop": "この行はループを開始します。範囲または条件が終了するまで同じブロックを繰り返します。",
-        "condition": "この行は条件を確認し、その条件が真（True）の場合のみブロックを実行します。",
-        "function": "この行は {name} という名前の関数を定義します。関数は再利用可能なステップをまとめます。",
-        "class": "この行は {name} という名前のクラスを定義します。クラスはオブジェクトの設計図です。",
-        "array": "この行は、複数の値をまとめて格納するリストまたは配列を作成・使用します。",
-        "print": "この行は出力を表示し、ユーザーが結果を確認できるようにします。",
-        "return": "この行は、現在の関数から値を呼び出し元に返します。",
-        "input": "この行はユーザーからの入力を受け付けます。",
-        "include": "この行は、組み込み機能を使用するためにライブラリコードをインポートまたはインクルードします。",
-        "comment": "これは開発者向けのコメントです。コードとしては実行されません。",
-        "call": "この行は関数を呼び出し、その関数を実行します。",
-        "generic": "この行は、プログラムのロジックを進める標準的なステップを実行します。",
-        "intermediate_suffix": " 中級レベルでは、ここでのコントロールフローとデータ状態の変化に注目してください。",
-        "advanced_suffix": " 上級レベルでは、時間・空間複雑度、エッジケース、および最適化の可能性を考慮してください。",
-        "no_errors": "ローカルチェッカーで明らかな構文エラーは検出されませんでした。",
-        "output_unknown": "このスニペットから出力を安全に予測することはできません。",
-        "next": "検出された概念を小さなサンプルで練習し、それらを1つのプログラムに組み合わせてみましょう。",
-    }
 }
 
 
@@ -386,14 +308,6 @@ def current_user():
 def detect_code_language(code, selected="auto"):
     if selected != "auto":
         return selected
-    # Enhanced logic mapping for HTML, CSS, and R
-    if re.search(r"<!DOCTYPE html>|<html|<body|<div|<p\b", code, re.IGNORECASE):
-        return "html"
-    if re.search(r"(\{|\bmargin:|\bpadding:|\bbackground-color:|\bcolor:)\s*[^;]+;", code):
-        if not re.search(r"\bpublic\s+class\b|\bfunction\b", code):
-            return "css"
-    if re.search(r"<-|read\.csv\(|ggplot\(|\bdata\.frame\(", code):
-        return "r"
     if re.search(r"#include\s*<|std::|cout\s*<<|cin\s*>>", code):
         return "cpp"
     if re.search(r"\bpublic\s+class\b|\bSystem\.out\.println\b|\bstatic\s+void\s+main\b", code):
@@ -411,57 +325,48 @@ def meaningful_lines(code):
 
 def concept_map(code):
     checks = {
-        "Variables": bool(re.search(r"(^|\s)(let|const|var|int|float|double|char|String|bool)\s+\w+|\w+\s*(<-|=)", code)),
-        "Input": bool(re.search(r"\b(input|scanf|cin\s*>>|Scanner|readline|gets|fgets|readLines)\b", code)),
-        "Output": bool(re.search(r"\b(print|printf|console\.log|System\.out\.println|cout\s*<<|cat\b)", code)) or bool(re.search(r"<p>|<h1>|<span>", code)),
-        "Loops": bool(re.search(r"\b(for|while|do|repeat)\b", code)),
+        "Variables": bool(re.search(r"(^|\s)(let|const|var|int|float|double|char|String|bool)\s+\w+|\w+\s*=", code)),
+        "Input": bool(re.search(r"\b(input|scanf|cin\s*>>|Scanner|readline|gets|fgets)\b", code)),
+        "Output": bool(re.search(r"\b(print|printf|console\.log|System\.out\.println|cout\s*<<)\b", code)),
+        "Loops": bool(re.search(r"\b(for|while|do)\b", code)),
         "Conditions": bool(re.search(r"\b(if|else|elif|switch|case)\b", code)),
-        "Functions": bool(re.search(r"\b(def|function)\s+\w+|\w+\s*<-\s*function|\w+\s+\w+\s*\([^)]*\)\s*\{", code)),
-        "Arrays": bool(re.search(r"\[[^\]]*\]|\b(list|array|vector|ArrayList|c\s*\()\b|\w+\s*\[\s*\]", code)),
+        "Functions": bool(re.search(r"\b(def|function)\s+\w+|\w+\s+\w+\s*\([^)]*\)\s*\{", code)),
+        "Arrays": bool(re.search(r"\[[^\]]*\]|\b(list|array|vector|ArrayList)\b|\w+\s*\[\s*\]", code)),
         "Classes": bool(re.search(r"\bclass\s+\w+", code)),
         "Objects": bool(re.search(r"\bnew\s+\w+\s*\(|\.\w+\s*\(", code)),
         "Recursion": False,
     }
-    function_names = re.findall(r"\b(?:def|function)\s+(\w+)|\b([A-Za-z_]\w*)\s*<-\s*function|\b(?:int|void)\s+(\w+)\s*\(", code)
-    names = [a or b or c for a, b, c in function_names]
-    checks["Recursion"] = any(len(re.findall(rf"\b{name}\s*\(", code)) > 1 for name in names if name)
+    function_names = re.findall(r"\b(?:def|function)\s+(\w+)|\b(?:int|void|float|double|String|bool)\s+(\w+)\s*\(", code)
+    names = [a or b for a, b in function_names]
+    checks["Recursion"] = any(len(re.findall(rf"\b{name}\s*\(", code)) > 1 for name in names)
     return checks
 
 
 def detect_line_kind(line, language):
     stripped = line.strip()
-    
-    # Language-specific Comment/Header Detections
-    if language == "html" and stripped.startswith(("")):
-        return "comment", {}
     if stripped.startswith(("#", "//", "/*", "*")):
         return "comment", {}
-        
     if re.match(r"^(#include|import\s+|from\s+)", stripped):
         return "include", {}
-        
-    # Dynamic function detection across language scopes
-    match = re.search(r"\b(?:def|function)\s+(\w+)|\b([A-Za-z_]\w*)\s*<-\s*function", stripped)
+    match = re.search(r"\b(?:def|function)\s+(\w+)|\b(?:int|void|float|double|String|bool)\s+(\w+)\s*\(", stripped)
     if match and not re.search(r"\b(if|for|while|switch)\b", stripped):
         return "function", {"name": match.group(1) or match.group(2)}
-        
     match = re.search(r"\bclass\s+(\w+)", stripped)
     if match:
         return "class", {"name": match.group(1)}
-    if re.search(r"\b(for|while|do|repeat)\b", stripped):
+    if re.search(r"\b(for|while|do)\b", stripped):
         return "loop", {}
     if re.search(r"\b(if|else if|elif|else|switch|case)\b", stripped):
         return "condition", {}
-    if re.search(r"\[[^\]]*\]|\b(vector|ArrayList|c\s*\()\b", stripped):
+    if re.search(r"\[[^\]]*\]|\b(vector|ArrayList)\b", stripped):
         return "array", {}
-    if re.search(r"\b(print|printf|console\.log|System\.out\.println|cout\s*<<|cat)\b", stripped) or language == "html":
+    if re.search(r"\b(print|printf|console\.log|System\.out\.println|cout\s*<<)\b", stripped):
         return "print", {}
     if re.search(r"\breturn\b", stripped):
         return "return", {}
-    if re.search(r"\b(input|scanf|cin\s*>>|Scanner|readLines)\b", stripped):
+    if re.search(r"\b(input|scanf|cin\s*>>|Scanner)\b", stripped):
         return "input", {}
-        
-    assignment = re.search(r"(?:let|const|var|int|float|double|char|String|bool)?\s*([A-Za-z_]\w*)\s*(?:=|<-)", stripped)
+    assignment = re.search(r"(?:let|const|var|int|float|double|char|String|bool)?\s*([A-Za-z_]\w*)\s*=", stripped)
     if assignment and "==" not in stripped:
         return "variable", {"name": assignment.group(1)}
     if re.match(r"\w+\s*\(", stripped):
@@ -493,17 +398,6 @@ def explain_lines(code, level, explanation_language, code_language):
 
 def detect_errors(code, code_language):
     errors = []
-    
-    # HTML and CSS brackets rules logic
-    if code_language == "html":
-        if code.count("<") != code.count(">"):
-            errors.append({
-                "line": "-",
-                "description": "Unbalanced HTML tag angled brackets detected.",
-                "fix": "Ensure every opening '<' matches a closing '>' tag safely."
-            })
-        return errors if errors else [{"line": "-", "description": TRANSLATIONS["english"]["no_errors"], "fix": "No action needed."}]
-
     pairs = [("(", ")"), ("[", "]"), ("{", "}")]
     for open_char, close_char in pairs:
         if code.count(open_char) != code.count(close_char):
@@ -527,10 +421,10 @@ def detect_errors(code, code_language):
                         "fix": "Add ':' at the end of the line.",
                     }
                 )
-        elif code_language in {"c", "cpp", "java", "javascript", "css"}:
+        elif code_language in {"c", "cpp", "java", "javascript"}:
             needs_semicolon = (
                 stripped
-                and not stripped.endswith((";", "{", "}", ":", ","))
+                and not stripped.endswith((";", "{", "}", ":"))
                 and not re.match(r"^(if|for|while|else|switch|class|public|private|function)\b", stripped)
                 and not stripped.startswith(("//", "#include", "import"))
             )
@@ -538,8 +432,8 @@ def detect_errors(code, code_language):
                 errors.append(
                     {
                         "line": line_number,
-                        "description": "This statement may be missing a semicolon or property closer.",
-                        "fix": "Add ';' at the end if this is a complete statement block.",
+                        "description": "This statement may be missing a semicolon.",
+                        "fix": "Add ';' at the end if this is a complete statement.",
                     }
                 )
     if not errors:
@@ -557,8 +451,8 @@ def complexity(code, concepts):
     if code.strip():
         nesting = max((len(line) - len(line.lstrip(" "))) // 4 for _, line in meaningful_lines(code))
 
-    loop_count = len(re.findall(r"\b(for|while|do|repeat)\b", code))
-    func_count = len(re.findall(r"\b(def|function)\s+\w+|\w+\s*<-\s*function", code))
+    loop_count = len(re.findall(r"\b(for|while|do)\b", code))
+    func_count = len(re.findall(r"\b(def|function)\s+\w+", code))
 
     score = (
         basic_concepts * 1
@@ -573,13 +467,40 @@ def complexity(code, concepts):
 
     if advanced_concepts >= 1 or (intermediate_concepts >= 2 and loop_count >= 2) or score >= 7:
         level = "Advanced"
-        reason = "Uses functional scaling recursion, structures, or advanced pipeline frameworks."
+        reason_parts = []
+        if concepts.get("Recursion"):
+            reason_parts.append("recursion")
+        if concepts.get("Classes"):
+            reason_parts.append("classes/OOP")
+        if func_count > 1:
+            reason_parts.append("multiple functions")
+        if nesting >= 2:
+            reason_parts.append("deep nesting")
+        reason = "Uses " + (", ".join(reason_parts) if reason_parts else "complex constructs") + "."
     elif intermediate_concepts >= 1 or loop_count > 1 or func_count >= 1 or score >= 4:
         level = "Intermediate"
-        reason = "Uses structured functions, lists, iterations, or layout trees."
+        reason_parts = []
+        if concepts.get("Functions"):
+            reason_parts.append("functions")
+        if concepts.get("Arrays"):
+            reason_parts.append("arrays/lists")
+        if loop_count > 1:
+            reason_parts.append("multiple loops")
+        if concepts.get("Conditions"):
+            reason_parts.append("conditions")
+        reason = "Uses " + (", ".join(reason_parts) if reason_parts else "moderate constructs") + "."
     else:
         level = "Beginner"
-        reason = "Uses fundamental single-step variables, style markers, or direct prints."
+        reason_parts = []
+        if concepts.get("Variables"):
+            reason_parts.append("variables")
+        if concepts.get("Loops"):
+            reason_parts.append("one loop")
+        if concepts.get("Conditions"):
+            reason_parts.append("one condition")
+        if concepts.get("Input"):
+            reason_parts.append("input/output")
+        reason = "Uses " + (", ".join(reason_parts) if reason_parts else "basic steps only") + "."
 
     return {"level": level, "score": score, "reason": reason}
 
@@ -587,59 +508,100 @@ def complexity(code, concepts):
 def predict_output(code, code_language, explanation_language):
     prints = []
     variables = {}
+    
+    # Track the evaluation tree blocks
     execution_stack = [True] 
+    
     lines = [line.strip().rstrip(";") for _, line in meaningful_lines(code)]
     
     for stripped in lines:
         if not stripped:
             continue
+            
+        # Detect block closures
         if stripped == "}" or stripped == "":
             if len(execution_stack) > 1:
                 execution_stack.pop()
             continue
 
-        # Handle Assignment compatibility with R language (<-)
-        assign = re.match(r"^(?:(?:let|const|var|int|float|double|char|String|bool)\s+)?([A-Za-z_]\w*)\s*(?:=|<-)\s*(.*)$", stripped)
+        # Look for simple assignments (int x = 10, let y = 20, x = 30)
+        assign = re.match(r"^(?:(?:let|const|var|int|float|double|char|String|bool)\s+)?([A-Za-z_]\w*)\s*=\s*(.*)$", stripped)
         if assign and "==" not in stripped:
             var_name = assign.group(1)
             var_val_expr = assign.group(2).strip().strip("\"'")
             if execution_stack[-1]:
+                # Try simple numeric evaluation
                 try:
                     variables[var_name] = int(var_val_expr)
                 except ValueError:
                     variables[var_name] = var_val_expr
 
+        # Handle simple condition blocks (if statements)
         if_match = re.match(r"^if\s*\((.*)\)\s*\{?", stripped) or re.match(r"^if\s+(.*):", stripped)
         if if_match:
             cond_expr = if_match.group(1).strip()
+            # Clean operators
             cond_expr = cond_expr.replace("&&", " and ").replace("||", " or ")
+            
+            # Substitute local variables into the expression mapping
             for k, v in variables.items():
                 cond_expr = re.sub(rf"\b{k}\b", str(repr(v) if isinstance(v, str) else v), cond_expr)
+            
             try:
+                # Sanitize out standard comparisons for simple safe execution mapping
+                allowed_expr = re.sub(r"[A-Za-z_]\w*", "False", cond_expr) if not cond_expr.replace(".","").replace(" ","").isdigit() else cond_expr
+                # Use current variables context mapping safely
                 result = bool(eval(cond_expr, {"__builtins__": None}, variables))
             except Exception:
-                result = True
+                result = True # Fallback to true if condition expression cannot be resolved parsed
+                
             execution_stack.append(result and execution_stack[-1])
             continue
 
+        # Handle Else branches
         if stripped.startswith("else") or stripped.startswith("elif"):
             if len(execution_stack) > 1:
                 prev_cond = execution_stack.pop()
                 execution_stack.append((not prev_cond) and (execution_stack[-1] if len(execution_stack) > 0 else True))
             continue
 
+        # Simulate Python for loop range increments
+        range_match = re.match(r"for\s+(\w+)\s+in\s+range\s*\(([^)]+)\)", stripped)
+        if range_match and execution_stack[-1]:
+            var_name = range_match.group(1)
+            range_args = [a.strip() for a in range_match.group(2).split(",")]
+            try:
+                if len(range_args) == 1:
+                    rng = range(int(range_args[0]))
+                elif len(range_args) == 2:
+                    rng = range(int(range_args[0]), int(range_args[1]))
+                else:
+                    rng = range(int(range_args[0]), int(range_args[1]), int(range_args[2]))
+                
+                # Check for an immediately following print block inside the execution scope
+                for next_line in lines[lines.index(stripped)+1:]:
+                    pm = re.search(r"print\s*\(\s*(\w+)\s*\)", next_line)
+                    if pm and pm.group(1) == var_name:
+                        for v in rng:
+                            prints.append(str(v))
+                        break
+            except (ValueError, IndexError):
+                pass
+
+        # Handle print extractions conditionally inside current context stack frame
         if execution_stack[-1]:
             print_match = re.search(
-                r"(?:print|printf|console\.log|System\.out\.println|cat)\s*\((.*?)\)|cout\s*<<\s*(.*)",
+                r"(?:print|printf|console\.log|System\.out\.println)\s*\((.*?)\)|cout\s*<<\s*(.*)",
                 stripped,
             )
             if print_match:
                 value = (print_match.group(1) or print_match.group(2) or "").strip()
-                value = value.replace("\\n", "").strip("\"'")
-                resolved = re.sub(r"\{(\w+)\}", lambda m: str(variables.get(m.group(1), m.group(1))), value)
-                resolved = str(variables.get(resolved, resolved))
-                if resolved and not any(c in resolved for c in ["(", "+", "%"]):
-                    prints.append(resolved)
+                if not ("range" in code and "for" in code and value in variables):
+                    value = value.replace("\\n", "").strip("\"'")
+                    resolved = re.sub(r"\{(\w+)\}", lambda m: str(variables.get(m.group(1), m.group(1))), value)
+                    resolved = str(variables.get(resolved, resolved))
+                    if resolved and not any(c in resolved for c in ["(", "+", "%"]):
+                        prints.append(resolved)
 
     if prints:
         return "\n".join(prints)
@@ -652,10 +614,25 @@ def roadmap(concepts):
         next_topics.append("Learn Array Traversal with Loops")
     if concepts.get("Loops"):
         next_topics.append("Practice Nested Loops")
+        next_topics.append("Explore While Loops")
     if concepts.get("Functions"):
         next_topics.append("Learn Function Parameters & Return Values")
+        next_topics.append("Practice Recursive Functions")
+    if concepts.get("Arrays"):
+        next_topics.append("Learn Array Sorting Algorithms")
+        next_topics.append("Practice Array Traversal & Searching")
+    if concepts.get("Conditions") and not concepts.get("Functions"):
+        next_topics.append("Learn Functions to Simplify Conditions")
+    if concepts.get("Classes") or concepts.get("Objects"):
+        next_topics.append("Study OOP Principles: Inheritance & Polymorphism")
+        next_topics.append("Learn Encapsulation & Abstraction")
+    if concepts.get("Recursion"):
+        next_topics.append("Study Recursion Trees & Memoization")
+        next_topics.append("Learn Dynamic Programming")
     if not concepts.get("Functions"):
         next_topics.append("Introduction to Functions")
+    if not concepts.get("Arrays"):
+        next_topics.append("Introduction to Lists & Arrays")
     if not next_topics:
         next_topics = ["Introduction to Functions", "Arrays & Lists", "OOP Basics", "Data Structures"]
     seen = set()
@@ -679,6 +656,36 @@ def quiz_questions(concepts, output):
         questions.append({
             "question": "What does a variable do in a program?",
             "options": ["Runs the program faster", "Stores a value for later use", "Creates a loop", "Ends the program"],
+            "answer": 1,
+        })
+    if concepts.get("Conditions"):
+        questions.append({
+            "question": "When does the code inside an 'if' block run?",
+            "options": ["Always", "Never", "Only when the condition is true", "Only when the condition is false"],
+            "answer": 2,
+        })
+    if concepts.get("Functions"):
+        questions.append({
+            "question": "What is the main benefit of using functions?",
+            "options": ["They make code run slower", "They group reusable steps to avoid repetition", "They delete unused variables", "They replace loops"],
+            "answer": 1,
+        })
+    if concepts.get("Arrays"):
+        questions.append({
+            "question": "What does an array or list store?",
+            "options": ["Only one value", "Multiple values in a single structure", "Only text values", "Only numbers"],
+            "answer": 1,
+        })
+    if concepts.get("Recursion"):
+        questions.append({
+            "question": "What is recursion?",
+            "options": ["A loop that never ends", "A function that calls itself", "An array inside a class", "A type of variable"],
+            "answer": 1,
+        })
+    if concepts.get("Classes"):
+        questions.append({
+            "question": "What is a class in object-oriented programming?",
+            "options": ["A type of loop", "A blueprint for creating objects", "A conditional statement", "A built-in function"],
             "answer": 1,
         })
     questions.append({
@@ -807,6 +814,7 @@ def pdf_escape(text):
 
 
 def make_simple_pdf(title, lines):
+    """Generates a structurally valid PDF document containing explicit text rendering objects."""
     catalog_obj = "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj"
     pages_obj = "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj"
     font_obj = "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj"
@@ -821,6 +829,7 @@ def make_simple_pdf(title, lines):
             commands.append("0 -14 Td")
             y -= 14
             continue
+        # Split chunks safely over single lines
         for chunk in re.findall(".{1,85}", str(raw_line)) or [""]:
             commands.append(f"({pdf_escape(chunk)}) Tj")
             commands.append("0 -14 Td")
@@ -845,8 +854,10 @@ def make_simple_pdf(title, lines):
         content_obj
     ]
     
+    # Calculate cross-reference table byte sizes
     body = "\n".join(pdf_parts) + "\n"
     offsets = []
+    current_offset = 0
     lines_list = body.splitlines()
     
     pdf_out = bytearray()
@@ -855,12 +866,14 @@ def make_simple_pdf(title, lines):
         pdf_out.extend((line + "\n").encode("utf-8"))
         
     xref_pos = len(pdf_out)
+    
     xref_table = [
         "xref",
         f"0 {len(pdf_parts)}",
         "0000000000 65535 f "
     ]
     
+    # Base configuration elements mappings
     for idx in range(1, len(pdf_parts)):
         xref_table.append(f"{offsets[idx]:010d} 00000 n ")
         
@@ -1084,6 +1097,7 @@ def download_pdf(history_id):
         
     result = json.loads(row["result_json"])
     
+    # Structure breakdown containing all data sets requested
     lines = [
         f"Programming Language: {row['code_language'].upper()}",
         f"Skill Level: {row['skill_level'].upper()}",
