@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Live Focus Analytics Monitor{% endblock %}
+{% block content %}
+<main class="dashboard-screen reveal" style="padding: 32px;">
+    <div class="workspace-grid">
+        <article class="code-panel">
+            <h1>👁️ Browser-Based Webcam Attention Tracking</h1>
+            <p class="muted">Monitors gaze alignment and concentration score tracking dynamically via native local browser processing blocks. No external hardware processing arrays are required.</p>
+            
+            <div class="webcam-container" style="margin-top: 20px; text-align: center;">
+                <video id="attentionWebcamFeedView" autoplay playsinline muted style="width: 100%; max-width: 420px; border-radius: var(--radius); border: 2px dashed var(--line); transform: scaleX(-1); background: #000;"></video>
+            </div>
+        </article>
+
+        <aside class="side-stack">
+            <section class="side-card" style="text-align: center;">
+                <h2>Current Attention Level Score</h2>
+                <strong id="liveAttentionScoreText" style="font-size: 2.4rem; display: block; margin-top: 14px; color: var(--teal);">Connecting Stream…</strong>
+                <p class="muted" style="margin-top: 12px; font-size: 0.85rem;">Maintains algorithmic verification loops tracking user presence coordinates continually inside code processing operations workspace rows.</p>
+            </section>
+        </aside>
+    </div>
+</main>
+{% endblock %}
