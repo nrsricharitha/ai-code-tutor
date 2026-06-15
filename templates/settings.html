@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}System Profiler Workspace Configurations{% endblock %}
+{% block content %}
+<main class="dashboard-screen reveal" style="padding: 32px; display: grid; place-items: center;">
+    <article class="auth-card">
+        <h1>⚙️ Preferences Settings</h1>
+        <p class="muted">Review system identity data mapping pointers allocated onto SQLite data files blocks arrays layout rows.</p>
+        
+        <div class="form-grid" style="margin-top: 20px;">
+            <label>
+                <span>Account Primary Full Name Identity Token</span>
+                <input type="text" value="{{ user.full_name }}" disabled style="opacity: 0.65;">
+            </label>
+            <label>
+                <span>Registered Email Verification Address Node</span>
+                <input type="text" value="{{ user.email }}" disabled style="opacity: 0.65;">
+            </label>
+            <label>
+                <span>Assigned Behavioral Role Group Classification Allocation</span>
+                <input type="text" value="{{ user.role|upper }}" disabled style="opacity: 0.65;">
+            </label>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="text-align: center;">Return to Main Classroom Studio Workspace</a>
+        </div>
+    </article>
+</main>
+{% endblock %}
