@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Student Analytics Portfolio{% endblock %}
+{% block content %}
+<main class="dashboard-screen reveal" style="padding: 32px;">
+    <h1 style="margin-bottom: 24px;">📈 Personalized Performance Dashboard</h1>
+    
+    <section class="stats-grid">
+        <article class="stat-card">
+            <span>Programs Explained Logs</span>
+            <strong>{{ progress.programs_analyzed }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Learning Routine Streak</span>
+            <strong style="color: var(--pink);">{{ progress.learning_streak }} Day(s) 🔥</strong>
+        </article>
+        <article class="stat-card">
+            <span>Evaluations Score Base</span>
+            <strong>{{ progress.quiz_accuracy * 100 }}%</strong>
+        </article>
+        <article class="stat-card">
+            <span>Current Skill Calibration</span>
+            <strong style="color: var(--teal);">{{ progress.current_level.upper() }}</strong>
+        </article>
+    </section>
+
+    <div class="result-card-full" style="margin-top: 24px;">
+        <h2>🏅 Earned Classroom Milestone Achievement Badges</h2>
+        <div class="concept-grid-full" style="margin-top: 18px;">
+            <div class="concept-chip active" style="background: rgba(255, 191, 102, 0.15);">
+                <span>🔥</span> <strong>Consistent Learner Medal</strong>
+            </div>
+            <div class="concept-chip active" style="background: rgba(40, 240, 200, 0.15);">
+                <span>👁️</span> <strong>Focus Master Distinction</strong>
+            </div>
+            <div class="concept-chip active" style="background: rgba(182, 243, 106, 0.15);">
+                <span>🧠</span> <strong>Quiz Champion Tier</strong>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
