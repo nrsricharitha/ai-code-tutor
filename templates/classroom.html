@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Academic Classroom Suite{% endblock %}
+{% block content %}
+<main class="dashboard-screen reveal" style="padding: 32px;">
+    <h1>🏫 Academic Classroom Center</h1>
+    <p class="muted">Current Interface Mode Assignment Setting Calibration: <strong>{{ user.role.upper() }}</strong></p>
+
+    {% if user.role == "teacher" %}
+    <article class="result-card-full" style="margin-top: 24px;">
+        <h2>Create New Student Group Assignment</h2>
+        <form method="POST" class="form-grid">
+            <label>
+                <span>Assignment Topic Assignment Title</span>
+                <input type="text" name="title" placeholder="e.g., Single Loop Sequence Traversal Verification" required>
+            </label>
+            <label>
+                <span>Instruction Protocol Parameters Guidance</span>
+                <textarea name="instructions" placeholder="Enter explicit rules guidelines or raw starter source files snippets directly..." style="min-height: 100px;"></textarea>
+            </label>
+            <button class="btn btn-primary" type="submit">Publish Assignment Document</button>
+        </form>
+    </article>
+    {% endif %}
+
+    <div class="result-card-full" style="margin-top: 24px;">
+        <h2>Active Classroom Course Assignments Workspace</h2>
+        <div class="mini-list" style="margin-top: 14px;">
+            {% for item in assignments %}
+                <div class="mini-item">
+                    <strong>📋 Title Name Segment: {{ item.title }}</strong>
+                    <p class="reason-text">{{ item.instructions }}</p>
+                    <small>Allocated Timestamp: {{ item.created_at }}</small>
+                </div>
+            {% else %}
+                <p class="muted">No continuous education assignments found on this workspace channel feed cluster loops.</p>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock %}
