@@ -1,184 +1,97 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard | AI Code Tutor{% endblock %}
-
-{% block nav %}
-<nav class="dashboard-nav">
-    <div>
-        <span class="nav-kicker">Learning workspace</span>
-        <strong>Hi, {{ session.get("user_name", "Coder") }}</strong>
-    </div>
-    <div class="nav-actions">
-        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">☾</button>
-        <a class="btn btn-ghost" href="{{ url_for('logout') }}">Logout</a>
-    </div>
-</nav>
-{% endblock %}
+{% block title %}Lesson Studio Workspace | AI Code Tutor{% endblock %}
 
 {% block content %}
-<main class="dashboard-screen">
-    <section class="stats-grid reveal">
-        <article class="stat-card">
-            <span>Programs analyzed</span>
-            <strong id="programsStat">{{ progress.programs_analyzed }}</strong>
-        </article>
-        <article class="stat-card">
-            <span>Total explanations</span>
-            <strong id="explanationsStat">{{ progress.total_explanations }}</strong>
-        </article>
-        <article class="stat-card">
-            <span>Current level</span>
-            <strong id="levelStat">{{ progress.current_level }}</strong>
-        </article>
-        <article class="stat-card">
-            <span>Concepts learned</span>
-            <strong id="conceptsStat">{{ concepts_learned|length }}</strong>
-        </article>
-    </section>
-
-    <section class="workspace-grid">
-        <div class="code-panel reveal">
+<main class="dashboard-screen reveal">
+    <div class="workspace-grid-full">
+        <article class="code-panel">
             <div class="panel-heading">
                 <div>
-                    <p class="eyebrow">Analyze any program</p>
-                    <h1>Code Tutor</h1>
+                    <p class="eyebrow">Personalized AI Mentor Suite</p>
+                    <h1>Interactive Classroom Laboratory</h1>
                 </div>
                 <div class="status-pill" id="statusPill">Ready</div>
             </div>
 
-            <textarea id="codeInput" class="code-input" spellcheck="false" placeholder="Paste Python, C, C++, Java, or JavaScript code here..."></textarea>
+            <textarea id="codeInput" class="code-input" placeholder="Write or paste code parameters to visualize line explanations structural sequences directly..."></textarea>
 
             <div class="controls-grid">
                 <label>
-                    <span>Programming Language</span>
+                    <span>Target Target Architecture</span>
                     <select id="codeLanguageSelect">
-                        {% for key, label in code_languages.items() %}
-                            <option value="{{ key }}">{{ label }}</option>
+                        {% for key, lbl in code_languages.items() %}
+                            <option value="{{ key }}">{{ lbl }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label>
-                    <span>Explanation Language</span>
+                    <span>Instruction Language Stream</span>
                     <select id="languageSelect">
-                        {% for key, label in explanation_languages.items() %}
-                            <option value="{{ key }}" {% if key == preferred_language %}selected{% endif %}>{{ label }}</option>
+                        {% for key, lbl in explanation_languages.items() %}
+                            <option value="{{ key }}">{{ lbl }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label>
-                    <span>Skill Level</span>
+                    <span>Pedagogical Learning Level</span>
                     <select id="skillSelect">
-                        {% for key, label in skill_levels.items() %}
-                            <option value="{{ key }}" {% if key == user.skill_level %}selected{% endif %}>{{ label }}</option>
+                        {% for key, lbl in skill_levels.items() %}
+                            <option value="{{ key }}">{{ lbl }}</option>
                         {% endfor %}
                     </select>
                 </label>
-                <div class="action-row">
-                    <button class="btn btn-primary" id="explainBtn" type="button">⚡ Explain Code</button>
-                    <button class="btn btn-secondary" id="clearBtn" type="button">Clear</button>
-                    <a class="btn btn-ghost disabled" id="downloadBtn" href="#" aria-disabled="true">↓ Download PDF</a>
-                </div>
             </div>
+
+            <div class="voice-controls-row" style="margin-top: 14px; display: flex; gap: 12px;">
+                <button type="button" class="btn btn-secondary" id="voiceInputBtn">🎙️ Start Voice Recording (Speak Code)</button>
+                <button type="button" class="btn btn-accent" id="voiceOutputBtn">🔊 Read Lesson Explanation Aloud</button>
+            </div>
+
+            <div class="action-row" style="margin-top: 20px;">
+                <button class="btn btn-primary btn-large" id="explainBtn" type="button">⚡ Initiate Comprehensive Analysis</button>
+                <button class="btn btn-secondary" id="clearBtn" type="button">Reset Workspace</button>
+                <a class="btn btn-ghost disabled" id="downloadBtn" href="#" aria-disabled="true">↓ Export Synthesis Document (PDF)</a>
+            </div>
+        </article>
+
+        <div class="results-stack" style="margin-top: 24px;">
+            <article class="result-card-full">
+                <h2>📄 Complete Classroom Line Explanation Explanation</h2>
+                <div id="overviewCard" class="overview-card">Paste your lesson code structure files to instantiate tutor tracking frames.</div>
+                <div id="explanationOutput" class="output-stack"></div>
+            </article>
+
+            <article class="result-card-full">
+                <h2>🧩 Checked Programming Core Concepts Checkmarks Matrix</h2>
+                <div id="conceptGrid" class="concept-grid-full"></div>
+            </article>
+
+            <article class="result-card-full">
+                <h2>📊 Operational Complexity Profile Indicators</h2>
+                <p id="complexityText" style="font-weight: 800; font-size: 1.2rem; color: var(--teal);"></p>
+                <p id="complexityReason" class="muted"></p>
+            </article>
+
+            <article class="result-card-full">
+                <h2>🔍 Compiler Error Boundary Simulation Verification Logs</h2>
+                <div id="errorList" class="mini-list"></div>
+            </article>
+
+            <article class="result-card-full">
+                <h2>▶ Terminal Output Stream Emulation Console</h2>
+                <pre id="outputPrediction" class="output-box"></pre>
+            </article>
+
+            <article class="result-card-full">
+                <h2>🗺 Dynamic Learning Progression Pathway Targets</h2>
+                <ul id="roadmapList" class="roadmap-list"></ul>
+            </article>
+
+            <article class="result-card-full" style="text-align: center; padding: 32px;">
+                <button type="button" class="btn btn-large btn-accent" id="favoriteBtn" disabled>⭐ Save Session Explanation Framework</button>
+            </article>
         </div>
-
-        <aside class="side-stack reveal delay-1">
-            <section class="side-card">
-                <div class="panel-heading compact">
-                    <h2>Analysis History</h2>
-                </div>
-                <div id="historyList" class="history-list">
-                    {% for item in history %}
-                        <button class="history-item" data-history-id="{{ item.id }}" type="button">
-                            <span>{{ item.title }}</span>
-                            <small>{{ item.code_language|title }} • {{ item.created_at }}</small>
-                        </button>
-                    {% else %}
-                        <p class="muted">No programs analyzed yet.</p>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="side-card">
-                <div class="panel-heading compact">
-                    <h2>Saved Explanations</h2>
-                </div>
-                <div id="favoritesList" class="history-list">
-                    {% for item in favorites %}
-                        <button class="history-item" data-history-id="{{ item.history_id }}" type="button">
-                            <span>{{ item.title }}</span>
-                            <small>Saved {{ item.created_at }}</small>
-                        </button>
-                    {% else %}
-                        <p class="muted">No favorites saved yet.</p>
-                    {% endfor %}
-                </div>
-            </section>
-        </aside>
-    </section>
-
-    <!-- Results: vertical full-width cards -->
-    <section id="resultsSection" class="results-stack reveal delay-1">
-
-        <!-- Explanation -->
-        <article class="result-card-full">
-            <div class="panel-heading compact">
-                <h2>📄 Code Explanation</h2>
-                <div class="loader hidden" id="loader" aria-hidden="true"></div>
-            </div>
-            <div id="overviewCard" class="overview-card">Paste code and press Explain Code.</div>
-            <div id="explanationOutput" class="output-stack"></div>
-        </article>
-
-        <!-- Detected Concepts -->
-        <article class="result-card-full">
-            <h2>🧩 Detected Concepts</h2>
-            <div id="conceptGrid" class="concept-grid-full"></div>
-        </article>
-
-        <!-- Complexity Meter -->
-        <article class="result-card-full">
-            <h2>📊 Complexity Analysis</h2>
-            <div class="complexity-wrap">
-                <div class="meter">
-                    <div id="meterFill"></div>
-                </div>
-                <p id="complexityText" class="strong-muted">Complexity Level: Not analyzed</p>
-                <p id="complexityReason" class="muted reason-text"></p>
-            </div>
-        </article>
-
-        <!-- Error Detection -->
-        <article class="result-card-full">
-            <h2>🔍 Error Detection</h2>
-            <div id="errorList" class="mini-list"></div>
-        </article>
-
-        <!-- Expected Output -->
-        <article class="result-card-full">
-            <h2>▶ Expected Output</h2>
-            <pre id="outputPrediction" class="output-box">Not available yet.</pre>
-        </article>
-
-        <!-- Learning Roadmap -->
-        <article class="result-card-full">
-            <h2>🗺 Learning Roadmap</h2>
-            <ul id="roadmapList" class="roadmap-list"></ul>
-        </article>
-
-        <!-- Quiz -->
-        <article class="result-card-full">
-            <div class="panel-heading compact">
-                <h2>🧠 Quiz</h2>
-                <div class="quiz-score-badge hidden" id="quizScoreBadge"></div>
-            </div>
-            <div id="quizList" class="quiz-container"></div>
-        </article>
-
-        <!-- Save Explanation -->
-        <article class="result-card-full save-section">
-            <button class="btn btn-accent btn-large" id="favoriteBtn" type="button" disabled>⭐ Save Explanation</button>
-        </article>
-
-    </section>
+    </div>
 </main>
 {% endblock %}
