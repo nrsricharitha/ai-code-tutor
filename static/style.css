@@ -86,6 +86,7 @@ a {
     place-items: center;
 }
 
+/* Glassmorphism Structural Framework Modules */
 .hero-panel,
 .auth-card,
 .code-panel,
@@ -179,6 +180,7 @@ body.light-mode .stat-card {
     color: var(--muted);
 }
 
+/* Form Fields & Interactive Actions Modules */
 .btn,
 .icon-toggle {
     min-height: 46px;
@@ -355,6 +357,7 @@ select option {
 .flash-danger { color: var(--danger); }
 .flash-warning { color: var(--amber); }
 
+/* Unified Classroom Dashboard Top Navigation Bar */
 .dashboard-nav {
     position: sticky;
     z-index: 10;
@@ -378,6 +381,40 @@ body.light-mode .dashboard-nav {
     font-size: 1.1rem;
 }
 
+.nav-tabs-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin: 0 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-tab {
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.88rem;
+    transition: background 180ms ease, color 180ms ease;
+    border: 1px solid transparent;
+}
+
+.nav-tab:hover {
+    color: var(--teal);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+body.light-mode .nav-tab {
+    color: var(--muted);
+}
+
+body.light-mode .nav-tab:hover {
+    color: var(--text);
+    background: rgba(20, 28, 44, 0.06);
+}
+
 .nav-actions {
     display: flex;
     gap: 12px;
@@ -389,6 +426,7 @@ body.light-mode .dashboard-nav {
     padding: 0;
 }
 
+/* Layout Core Elements Grid Layout Systems */
 .dashboard-screen {
     min-height: calc(100vh - 78px);
 }
@@ -427,6 +465,14 @@ body.light-mode .dashboard-nav {
     grid-template-columns: minmax(0, 1fr) minmax(320px, 0.36fr);
     gap: 22px;
     align-items: start;
+}
+
+.workspace-grid-full {
+    width: min(1440px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
 }
 
 .code-panel,
@@ -486,6 +532,12 @@ body.light-mode .dashboard-nav {
     align-items: end;
 }
 
+.voice-controls-row .btn {
+    flex: 1;
+    font-size: 0.85rem;
+    min-height: 40px;
+}
+
 .action-row {
     grid-column: 1 / -1;
     display: flex;
@@ -523,6 +575,7 @@ body.light-mode .dashboard-nav {
     margin-top: 6px;
 }
 
+/* Tutoring Metrics Results Panels Modules */
 .results-stack {
     width: min(1440px, 100%);
     margin: 22px auto 0;
@@ -613,7 +666,7 @@ body.light-mode .roadmap-item {
     background: rgba(255, 255, 255, 0.62);
 }
 
-/* Quiz styles */
+/* Adaptive Evaluation System Quiz Component Layouts */
 .quiz-container {
     display: grid;
     gap: 20px;
@@ -719,11 +772,12 @@ body.light-mode .quiz-item {
 
 .quiz-score-badge.hidden { display: none; }
 
-/* Old results grid (keep for backward compat, hidden) */
+/* Backward Compatibility Hidden Hooks */
 .results-grid {
     display: none;
 }
 
+/* Content Element Block Cards Modules */
 .overview-card,
 .line-card,
 .mini-item,
@@ -899,6 +953,7 @@ body.light-mode .history-item {
     display: none !important;
 }
 
+/* Global Media Breakpoints Responsive Matrix Query Layers */
 @media (max-width: 1100px) {
     .workspace-grid,
     .results-grid,
