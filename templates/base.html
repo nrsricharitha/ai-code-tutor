@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AI Code Tutor Core Platform{% endblock %}</title>
+    <title>{% block title %}AI Code Tutor Matrix{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
@@ -13,19 +13,14 @@
         {% if session.get("user_id") %}
         <nav class="dashboard-nav">
             <div class="nav-branding">
-                <span class="nav-kicker">PERSONALIZED TUTOR</span>
-                <strong>AI Code Tutor</strong>
+                <span class="nav-kicker">AI CODING TUTOR</span>
+                <strong>Workspace Suite</strong>
             </div>
             <div class="nav-tabs-wrapper">
                 <a href="{{ url_for('dashboard') }}" class="nav-tab">Code Explanation</a>
-                <a href="{{ url_for('learning_path') }}" class="nav-tab">Learning Path</a>
-                <a href="{{ url_for('weakness_analysis') }}" class="nav-tab">Weakness Analysis</a>
-                <a href="{{ url_for('progress_dashboard') }}" class="nav-tab">Progress Dashboard</a>
-                <a href="{{ url_for('adaptive_quiz') }}" class="nav-tab">Adaptive Quiz</a>
-                <a href="{{ url_for('classroom') }}" class="nav-tab">Classroom Mode</a>
                 <a href="{{ url_for('attention_monitor') }}" class="nav-tab">Attention Monitor</a>
+                <a href="{{ url_for('progress_dashboard') }}" class="nav-tab">Progress Dashboard</a>
                 <a href="{{ url_for('feedback') }}" class="nav-tab">Feedback</a>
-                <a href="{{ url_for('settings') }}" class="nav-tab">Settings</a>
             </div>
             <div class="nav-actions">
                 <button class="icon-toggle" id="themeToggle" type="button">☾</button>
