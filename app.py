@@ -528,7 +528,7 @@ def predict_output(code, code_language, explanation_language):
                     variables[var_name] = var_val_expr
 
         if_match = re.match(r"^if\s*\((.*)\)\s*\{?", stripped) or re.match(r"^if\s+(.*):", stripped)
-        if_match:
+        if if_match:
             cond_expr = if_match.group(1).strip()
             cond_expr = cond_expr.replace("&&", " and ").replace("||", " or ")
             for k, v in variables.items():
