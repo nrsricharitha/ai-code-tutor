@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | AI Code Tutor{% endblock %}
+
+{% block nav %}
+<nav class="dashboard-nav">
+    <div>
+        <span class="nav-kicker">Learning workspace</span>
+        <strong>Hi, {{ session.get("user_name", "Coder") }}</strong>
+    </div>
+    <div class="nav-actions">
+        <!-- Attention Monitor Badge -->
+        <div class="attention-badge" id="attentionBadge" title="Attention Monitor">
+            <span id="attentionIcon">👁</span>
+            <span id="attentionLabel">Cam Off</span>
+        </div>
+        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">☾</button>
+        <a class="btn btn-ghost" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Hidden webcam feed for attention monitor -->
+<video id="attentionVideo" autoplay muted playsinline style="display:none;"></video>
+<canvas id="attentionCanvas" style="display:none;"></canvas>
+
+<!-- Feedback Modal -->
+<div id="feedbackModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Feedback">
+    <div class="modal-card">
+        <button class="modal-close" id="feedbackClose" type="button" aria-label="Close">✕</button>
+        <h2>💬 Feedback</h2>
+        <p class="muted">Help us improve your learning experience.</p>
+        <div class="star-row" id="starRow" role="group" aria-label="Rating">
+            {% for i in range(1,6) %}
+            <button class="star-btn" data-rating="{{ i }}" type="button" aria-label="{{ i }} star">★</button>
+            {% endfor %}
+        </div>
+        <p id="starLabel" class="muted" style="font-size:0.82rem;margin:4px 0 10px;">Tap a star to rate</p>
+        <label>
+            <span>Category</span>
+            <select id="feedbackCategory">
+                <option value="general">General</option>
+                <option value="explanation">Explanation quality</option>
+                <option value="quiz">Quiz</option>
+                <option value="voice">Voice / TTS</option>
+                <option value="attention">Attention monitor</option>
+                <option value="ui">UI / Design</option>
+            </select>
+        </label>
+        <label style="margin-top:12px;">
+            <span>Comment (optional)</span>
+            <textarea id="feedbackComment" rows="3" style="resize:vertical;padding:10px;font-family:inherit;font-size:0.9rem;" placeholder="Tell us what you think…"></textarea>
+        </label>
+        <button class="btn btn-primary" id="feedbackSubmit" type="button" style="margin-top:16px;width:100%;">Submit Feedback</button>
+        <p id="feedbackMsg" class="muted" style="margin-top:10px;font-size:0.85rem;text-align:center;"></p>
+    </div>
+</div>
+
+<main class="dashboard-screen">
+    <section class="stats-grid reveal">
+        <article class="stat-card">
+            <span>Programs analyzed</span>
+            <strong id="programsStat">{{ progress.programs_analyzed }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Total explanations</span>
+            <strong id="explanationsStat">{{ progress.total_explanations }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Current level</span>
+            <strong id="levelStat">{{ progress.current_level }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Concepts learned</span>
+            <strong id="conceptsStat">{{ concepts_learned|length }}</strong>
+        </article>
+    </section>
+
+    <section class="workspace-grid">
+        <div class="code-panel reveal">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">Analyze any program</p>
+                    <h1>Code Tutor</h1>
+                </div>
+                <div class="status-pill" id="statusPill">Ready</div>
+            </div>
+
+            <textarea id="codeInput" class="code-input" spellcheck="false" placeholder="Paste Python, C, C++, Java, or JavaScript code here..."></textarea>
+
+            <div class="controls-grid">
+                <label>
+                    <span>Programming Language</span>
+                    <select id="codeLanguageSelect">
+                        {% for key, label in code_languages.items() %}
+                            <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>Explanation Language</span>
+                    <select id="languageSelect">
+                        {% for key, label in explanation_languages.items() %}
+                            <option value="{{ key }}" {% if key == preferred_language %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>Skill Level</span>
+                    <select id="skillSelect">
+                        {% for key, label in skill_levels.items() %}
+                            <option value="{{ key }}" {% if key == user.skill_level %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <div class="action-row">
+                    <button class="btn btn-primary" id="explainBtn" type="button">⚡ Explain Code</button>
+                    <button class="btn btn-secondary" id="clearBtn" type="button">Clear</button>
+                    <a class="btn btn-ghost disabled" id="downloadBtn" href="#" aria-disabled="true">↓ Download PDF</a>
+                </div>
+            </div>
+        </div>
+
+        <aside class="side-stack reveal delay-1">
+            <section class="side-card">
+                <div class="panel-heading compact">
+                    <h2>Analysis History</h2>
+                </div>
+                <div id="historyList" class="history-list">
+                    {% for item in history %}
+                        <button class="history-item" data-history-id="{{ item.id }}" type="button">
+                            <span>{{ item.title }}</span>
+                            <small>{{ item.code_language|title }} • {{ item.created_at }}</small>
+                        </button>
+                    {% else %}
+                        <p class="muted">No programs analyzed yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="side-card">
+                <div class="panel-heading compact">
+                    <h2>Saved Explanations</h2>
+                </div>
+                <div id="favoritesList" class="history-list">
+                    {% for item in favorites %}
+                        <button class="history-item" data-history-id="{{ item.history_id }}" type="button">
+                            <span>{{ item.title }}</span>
+                            <small>Saved {{ item.created_at }}</small>
+                        </button>
+                    {% else %}
+                        <p class="muted">No favorites saved yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Attention Monitor Card -->
+            <section class="side-card" id="attentionCard">
+                <div class="panel-heading compact">
+                    <h2>👁 Attention Monitor</h2>
+                </div>
+                <p class="muted" style="font-size:0.85rem;margin:0 0 12px;">Uses your webcam to detect if you're focused while learning.</p>
+                <button class="btn btn-secondary" id="startCamBtn" type="button" style="width:100%;">Start Camera</button>
+                <div id="attentionStatus" class="attention-status-box hidden">
+                    <div class="attention-dot" id="attentionDot"></div>
+                    <span id="attentionStatusText">Checking…</span>
+                </div>
+                <p class="muted" style="font-size:0.78rem;margin-top:10px;">📷 Video is processed locally — never uploaded.</p>
+            </section>
+        </aside>
+    </section>
+
+    <!-- Results: vertical full-width cards -->
+    <section id="resultsSection" class="results-stack reveal delay-1">
+
+        <!-- Explanation -->
+        <article class="result-card-full">
+            <div class="panel-heading compact">
+                <h2>📄 Code Explanation</h2>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <!-- Voice Toolbar -->
+                    <div class="voice-toolbar" id="voiceToolbar">
+                        <button class="voice-btn" id="voicePlayBtn" type="button" title="Read aloud" disabled>▶ Read</button>
+                        <button class="voice-btn" id="voicePauseBtn" type="button" title="Pause" disabled>⏸</button>
+                        <button class="voice-btn" id="voiceStopBtn" type="button" title="Stop" disabled>⏹</button>
+                        <select id="voiceSpeedSelect" class="voice-speed" title="Speed">
+                            <option value="0.7">Slow</option>
+                            <option value="1" selected>Normal</option>
+                            <option value="1.3">Fast</option>
+                        </select>
+                    </div>
+                    <div class="loader hidden" id="loader" aria-hidden="true"></div>
+                </div>
+            </div>
+            <div id="overviewCard" class="overview-card">Paste code and press Explain Code.</div>
+            <div id="explanationOutput" class="output-stack"></div>
+        </article>
+
+        <!-- Detected Concepts -->
+        <article class="result-card-full">
+            <h2>🧩 Detected Concepts</h2>
+            <div id="conceptGrid" class="concept-grid-full"></div>
+        </article>
+
+        <!-- Complexity Meter -->
+        <article class="result-card-full">
+            <h2>📊 Complexity Analysis</h2>
+            <div class="complexity-wrap">
+                <div class="meter">
+                    <div id="meterFill"></div>
+                </div>
+                <p id="complexityText" class="strong-muted">Complexity Level: Not analyzed</p>
+                <p id="complexityReason" class="muted reason-text"></p>
+            </div>
+        </article>
+
+        <!-- Error Detection -->
+        <article class="result-card-full">
+            <h2>🔍 Error Detection</h2>
+            <div id="errorList" class="mini-list"></div>
+        </article>
+
+        <!-- Expected Output -->
+        <article class="result-card-full">
+            <h2>▶ Expected Output</h2>
+            <pre id="outputPrediction" class="output-box">Not available yet.</pre>
+        </article>
+
+        <!-- Learning Roadmap -->
+        <article class="result-card-full">
+            <h2>🗺 Learning Roadmap</h2>
+            <ul id="roadmapList" class="roadmap-list"></ul>
+        </article>
+
+        <!-- Quiz -->
+        <article class="result-card-full">
+            <div class="panel-heading compact">
+                <h2>🧠 Quiz</h2>
+                <div class="quiz-score-badge hidden" id="quizScoreBadge"></div>
+            </div>
+            <div id="quizList" class="quiz-container"></div>
+        </article>
+
+        <!-- Save / Feedback row -->
+        <article class="result-card-full save-section" style="flex-direction:row;flex-wrap:wrap;gap:14px;">
+            <button class="btn btn-accent btn-large" id="favoriteBtn" type="button" disabled>⭐ Save Explanation</button>
+            <button class="btn btn-ghost btn-large" id="feedbackBtn" type="button">💬 Give Feedback</button>
+        </article>
+
+    </section>
+</main>
+{% endblock %}
