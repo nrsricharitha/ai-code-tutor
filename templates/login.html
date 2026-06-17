@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Login | AI Code Tutor{% endblock %}
+
+{% block content %}
+<main class="auth-screen">
+    <section class="auth-card reveal">
+        <a class="back-link" href="{{ url_for('home') }}">Back to home</a>
+        <h1>Welcome back</h1>
+        <p>Login to continue your code learning progress.</p>
+        <form method="POST" autocomplete="off" class="form-grid">
+            <label>
+                <span>Email</span>
+                <input type="email" name="email" autocomplete="new-email" placeholder="you@example.com" required>
+            </label>
+            <label>
+                <span>Password</span>
+                <input type="password" name="password" autocomplete="new-password" placeholder="Enter your password" required>
+            </label>
+            <div class="form-row">
+                <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+            </div>
+            <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+        <p class="switch-link">New to AI Code Tutor? <a href="{{ url_for('signup') }}">Create an account</a></p>
+    </section>
+</main>
+{% endblock %}
